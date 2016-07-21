@@ -10,11 +10,11 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using System.Collections;
 
-public class ButtonSound : MonoBehaviour, IPointerDownHandler
+public class ButtonSound : MonoBehaviour, IPointerClickHandler
 {
     #region Class members
-    public AudioClipSource aduioClipSource;
-	public float volume = 1;
+    public AudioClipSource audioClipSource;
+    public float volume = 1;
 	public float delay = 0;
 	#endregion
 		
@@ -44,13 +44,13 @@ public class ButtonSound : MonoBehaviour, IPointerDownHandler
 		
 	#region IPointerDownHandler implementation
 	// This fucntion is triggered by the Unity's event system
-	public void OnPointerDown (PointerEventData eventData) 
+	public void OnPointerClick (PointerEventData eventData) 
 	{
 		Selectable selectable = GetComponent<Selectable>();
 			
-		if (selectable != null && selectable.interactable == true && aduioClipSource != null)
+		if (selectable != null && selectable.interactable == true && audioClipSource != null)
 		{
-            aduioClipSource.Play(cachedAudioSource);
+            audioClipSource.Play(cachedAudioSource);
 		}
 	}
 	#endregion

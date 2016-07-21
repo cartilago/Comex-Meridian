@@ -20,10 +20,15 @@ public class ButtonScale : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     #endregion
 
     #region MonoBehaviour overrides
-    void Awake()
+    private void Awake()
     {
         if (targetTransform == null)
             targetTransform = GetComponent<RectTransform>();
+    }
+
+    private void OnEnable()
+    {
+        targetTransform.localScale = from;
     }
     #endregion
 

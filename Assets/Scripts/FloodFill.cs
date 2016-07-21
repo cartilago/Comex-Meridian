@@ -84,7 +84,7 @@ static public class FloodFill
         return tx;
     }
 
-    public static Texture2D HSVFill(this Texture2D texture, int startX, int startY, Color newColor, float hueTolerance)
+    public static Texture2D HSVFill(this Texture2D texture, int startX, int startY, Color newColor, float hueTolerance, float saturationTolerance, float valueTolerance)
     {
         Texture2D tx = new Texture2D(texture.width, texture.height);
         tx.SetPixels(texture.GetPixels(), 0);
@@ -130,7 +130,11 @@ static public class FloodFill
            
             if (x > 0)
             {
-                if (Mathf.Abs(copyBmp.GetHSV(x - 1, y).h - originalHSV.h) < hueTolerance)
+                HSVColor hsvColor = copyBmp.GetHSV(x - 1, y);
+
+                if (Mathf.Abs(hsvColor.h - originalHSV.h) < hueTolerance && 
+                    Mathf.Abs(hsvColor.s - originalHSV.s) < saturationTolerance && 
+                    Mathf.Abs(hsvColor.v - originalHSV.v) < valueTolerance)
                 {
                     copyBmp[x - 1, y] = newColor;
                     mask[x - 1, y] = Color.white;
@@ -139,9 +143,12 @@ static public class FloodFill
             }
             if (x < width - 1)
             {
-                //if (copyBmp[x + 1, y] == originalColor)
-                if (Mathf.Abs(copyBmp.GetHSV(x + 1, y).h - originalHSV.h) < hueTolerance)
-                    {
+                HSVColor hsvColor = copyBmp.GetHSV(x + 1, y);
+
+                if (Mathf.Abs(hsvColor.h - originalHSV.h) < hueTolerance &&
+                     Mathf.Abs(hsvColor.s - originalHSV.s) < saturationTolerance &&
+                     Mathf.Abs(hsvColor.v - originalHSV.v) < valueTolerance)
+                {
                     copyBmp[x + 1, y] = newColor;
                     mask[x + 1, y] = Color.white;
                     openNodes.Enqueue(new Point(x + 1, y));
@@ -149,8 +156,11 @@ static public class FloodFill
             }
             if (y > 0)
             {
-                //if (copyBmp[x, y - 1] == originalColor)
-                if (Mathf.Abs(copyBmp.GetHSV(x, y - 1).h - originalHSV.h) < hueTolerance)
+                HSVColor hsvColor = copyBmp.GetHSV(x, y - 1);
+
+                if (Mathf.Abs(hsvColor.h - originalHSV.h) < hueTolerance &&
+                    Mathf.Abs(hsvColor.s - originalHSV.s) < saturationTolerance &&
+                    Mathf.Abs(hsvColor.v - originalHSV.v) < valueTolerance)
                 {
                     copyBmp[x, y - 1] = newColor;
                     mask[x, y -1 ] = Color.white;
@@ -159,8 +169,11 @@ static public class FloodFill
             }
             if (y < height - 1)
             {
-                if (Mathf.Abs(copyBmp.GetHSV(x, y + 1).h - originalHSV.h) < hueTolerance)
-                //if (copyBmp[x, y + 1] == originalColor)
+                HSVColor hsvColor = copyBmp.GetHSV(x, y + 1);
+
+                if (Mathf.Abs(hsvColor.h - originalHSV.h) < hueTolerance &&
+                    Mathf.Abs(hsvColor.s - originalHSV.s) < saturationTolerance &&
+                    Mathf.Abs(hsvColor.v - originalHSV.v) < valueTolerance)
                 {
                     copyBmp[x, y + 1] = newColor;
                     mask[x, y + 1] = Color.white;

@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Threading;
 
-public enum WebCamAuthorizationStatus {Requested, Authorized, Denied};
+/*
 
 [System.Serializable]
 public class ColorTracker {
@@ -99,7 +99,7 @@ public class WebCamTracker : MonoBehaviour {
 		}
 	}
 	
-	void OnDestroy () {
+	 public void OnDestroy () {
 		if(webCamTexture != null) {
 			
 			if (mdThread != null)
@@ -212,3 +212,4 @@ public class WebCamTracker : MonoBehaviour {
 		}
 	}
 }
+*/
