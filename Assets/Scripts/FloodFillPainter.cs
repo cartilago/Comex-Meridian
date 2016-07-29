@@ -44,5 +44,7 @@ public class FloodFillPainter : MonoBehaviour {
         tx = FloodFill.HSVFill(texture, (int)((1 - pos.y) * texture.width), (int)((1 - pos.x) * texture.height), Color.blue, .03f, 0.9f, 1);
         tx.Apply();
         GetComponent<MeshRenderer>().material.SetTexture("_TintMask", tx);
+
+        Debug.Log("Filling at ");
     }
 }

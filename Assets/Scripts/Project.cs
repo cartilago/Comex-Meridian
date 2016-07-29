@@ -10,7 +10,10 @@ public class Project
     public string encodedPhoto;
     public Vector2 photoSize;
     public float photoAngle;
-    public List<Vector2> floodFillPoints = new List<Vector2>();
+    public List<DrawingActionBase> drawingActions = new List<DrawingActionBase>();
+
+    [System.NonSerialized]
+    public Texture2D photo;
     #endregion
 
     #region Class implementation
@@ -19,18 +22,56 @@ public class Project
         name = "Tu proyecto Meridian";
     }
 
-    public void AddFlodFillPoint(Vector2 point)
+    public void Hide()
     {
-        floodFillPoints.Add(point);
-        UpdateImage();
+        for (int i = 0; i < drawingActions.Count; i++)
+            drawingActions[i].gameObject.SetActive(false);
+    }
+
+    public void Show()
+    {
+        for (int i = 0; i < drawingActions.Count; i++)
+            drawingActions[i].gameObject.SetActive(true);
+    }
+
+    public void AddDrawingAction(DrawingActionBase drawingAction)
+    {
+        drawingActions.Add(drawingAction);
+    }
+
+    public void RemoveLastDrawingAction()
+    {
+        DrawingActionBase lastDrawingAction = drawingActions[drawingActions.Count - 1];
+
+        drawingActions.Remove(lastDrawingAction);
+        GameObject.Destroy(lastDrawingAction.gameObject);
+    }
+
+    public void ClearDrawingActions()
+    {
+        for (int i = 0; i < drawingActions.Count; i++)
+            GameObject.Destroy(drawingActions[i].gameObject);
+
+        drawingActions.Clear();
     }
 
     public void SetPhoto(Texture2D photo)
     {
-        encodedPhoto = Texture2DToString(photo);
+        this.photo = photo;
+        ClearDrawingActions();
     }
 
     public Texture2D GetPhoto()
+    {
+        return photo;
+    }
+
+    public void SetEncodedPhoto(Texture2D photo)
+    {
+        encodedPhoto = Texture2DToString(photo);
+    }
+
+    public Texture2D GetEncodedPhoto()
     {
         if (encodedPhoto != null)
             return Texture2DFromString(encodedPhoto);

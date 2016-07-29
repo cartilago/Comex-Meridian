@@ -1,21 +1,26 @@
-﻿using UnityEngine;
+﻿/// <summary>
+/// CameraManager.
+/// Defines functionality for taking pgotos with the device's Webcam.
+/// 
+/// By Jorge L. Chavez Herrera
+/// </summary>
+using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
 using Meridian.Framework.Utils;
 using Meridian.Framework.Managers;
 
-public enum WebCamAuthorizationStatus { Off,Requested, Authorized, Denied };
+public enum WebCamAuthorizationStatus { Off, Requested, Authorized, Denied };
 
 public class CameraManager : MonoSingleton<CameraManager>
 {
     #region Class members
     public Decorator decorator;
-    public Renderer photoRnderer;
+    public Renderer previewRenderer;
     public AudioClipSource photoSFX;
+
     private WebCamTexture webCamTexture;
     private WebCamAuthorizationStatus aurhorizationStatus = WebCamAuthorizationStatus.Off;
-    private Color32[] currentFrame = null;
-
     private Vector2 photoSize;
     private float photoAngle;
     #endregion
@@ -47,15 +52,18 @@ public class CameraManager : MonoSingleton<CameraManager>
     #region MonoBehaviour overrides
     private void OnEnable()
     {
-        if (aurhorizationStatus == WebCamAuthorizationStatus.Off)
+        previewRenderer.gameObject.SetActive(true);
+
+        // Restart WebCam
+        if (aurhorizationStatus == WebCamAuthorizationStatus.Off || aurhorizationStatus == WebCamAuthorizationStatus.Denied)
         {
             StartCoroutine(StartCamera());
         }
 
         if (webCamTexture != null && aurhorizationStatus == WebCamAuthorizationStatus.Authorized)
         {
-            photoRnderer.material.SetTexture("_MainTex", webCamTexture);
             webCamTexture.Play();
+            previewRenderer.material.SetTexture("_MainTex", webCamTexture);
         }
 
         decorator.Hide();
@@ -63,6 +71,9 @@ public class CameraManager : MonoSingleton<CameraManager>
 
     private void OnDisable()
     {
+        previewRenderer.gameObject.SetActive(false);
+
+        // Pause WebCam
         if (webCamTexture != null && aurhorizationStatus == WebCamAuthorizationStatus.Authorized)
         {
             webCamTexture.Pause();
@@ -73,6 +84,7 @@ public class CameraManager : MonoSingleton<CameraManager>
 
     override public void OnDestroy()
     {
+        // Stop WebCam
         if (webCamTexture != null)
         {
             webCamTexture.Stop();
@@ -83,60 +95,52 @@ public class CameraManager : MonoSingleton<CameraManager>
     #region Class implementation
     IEnumerator StartCamera()
     {
-        // Request user authorization for using the webcam if running as webplayer
-        if (Application.platform == RuntimePlatform.OSXWebPlayer || Application.platform == RuntimePlatform.WindowsWebPlayer ||
-            Application.platform == RuntimePlatform.OSXEditor || Application.platform == RuntimePlatform.WindowsEditor)
+        // Request WebCam's user authorization
+        yield return Application.RequestUserAuthorization(UserAuthorization.WebCam | UserAuthorization.Microphone);
+
+        if (Application.HasUserAuthorization(UserAuthorization.WebCam | UserAuthorization.Microphone))
         {
-
-            yield return Application.RequestUserAuthorization(UserAuthorization.WebCam | UserAuthorization.Microphone);
-
-            if (Application.HasUserAuthorization(UserAuthorization.WebCam))
-                aurhorizationStatus = WebCamAuthorizationStatus.Authorized;
-            else
-                aurhorizationStatus = WebCamAuthorizationStatus.Denied;
+            aurhorizationStatus = WebCamAuthorizationStatus.Authorized;
+                
         }
         else
-            aurhorizationStatus = WebCamAuthorizationStatus.Authorized;
+        {
+            aurhorizationStatus = WebCamAuthorizationStatus.Denied;
+            yield break;
+        }
 
         // Setup WEBCam texture
         string backCamName = "";
         WebCamDevice[] webcamDevices = WebCamTexture.devices;
 
+        // Find back camera
         for (int i = 0; i < webcamDevices.Length; i++)
             if (webcamDevices[i].isFrontFacing == false)
                 backCamName = webcamDevices[i].name;
 
+        // Set WebCam resolution, ensure to get a texture at least the double size of a screen
         webCamTexture = new WebCamTexture(backCamName);
-        webCamTexture.requestedWidth = Screen.width * 2;
-        webCamTexture.requestedHeight = Screen.height * 2;
+        webCamTexture.requestedWidth = Screen.width * 4;
+        webCamTexture.requestedHeight = Screen.height * 4;
         webCamTexture.requestedFPS = 60;
 
         webCamTexture.Play();
-       
-        if (webCamTexture.videoRotationAngle > 0)
-        {
-            photoSize = new Vector2(Screen.height, Screen.width);
-            photoAngle = webCamTexture.videoRotationAngle + 180;
-           
-        }
+
+        photoAngle = (webCamTexture.videoRotationAngle != 0) ? webCamTexture.videoRotationAngle + 180 : 0;
+
+        // Adjust preview to match photo orientation & size
+        float screenAspectRatio = (float)Screen.height / (float)Screen.width;
+        photoSize = new Vector2(webCamTexture.width, webCamTexture.height);
+        float photoAspectRatio = photoSize.y / photoSize.x;
+  
+        if (photoAngle == 0)
+            Camera.main.orthographicSize = (photoSize.y / 2) * (screenAspectRatio / photoAspectRatio);
         else
-        {
-            photoSize = new Vector2(Screen.width, Screen.height);
-            photoAngle = 0;
-        }
+            Camera.main.orthographicSize = (photoSize.x / 2) * (screenAspectRatio / (photoSize.x / photoSize.y));
 
-        Camera.main.orthographicSize = Screen.height / 2;
-        photoRnderer.transform.localScale = photoSize;
-        photoRnderer.transform.localEulerAngles = new Vector3(0, 0, photoAngle);
-        photoRnderer.material.SetTexture("_MainTex", webCamTexture);
-        
-
-
-        /*
-        DebugManager.Log("Dimensions: " + webCamTexture.width + "x" + webCamTexture.height);
-        DebugManager.Log("Video rotation angle: " + webCamTexture.videoRotationAngle);
-        DebugManager.Log("Video vertically mirrored" + webCamTexture.videoVerticallyMirrored);
-        */
+        previewRenderer.transform.localScale = photoSize;
+        previewRenderer.transform.localEulerAngles = new Vector3(0, 0, photoAngle);
+        previewRenderer.material.SetTexture("_MainTex", webCamTexture);
     }
 
     public void TakeSnapshot()
@@ -146,21 +150,33 @@ public class CameraManager : MonoSingleton<CameraManager>
 
     private IEnumerator TakeSnapshotCoroutine()
     {
-        photoSFX.Play(cachedAudioSource);
+        Color32[] photoBuffer = null;
+
+        // Grab the current Webcam's image
         webCamTexture.Pause();
-        currentFrame = webCamTexture.GetPixels32();
 
-        Texture2D texture = new Texture2D(webCamTexture.width, webCamTexture.height);
-        texture.SetPixels32(currentFrame);
-        texture.Apply();
+        photoBuffer = webCamTexture.GetPixels32();
+        photoSFX.Play(cachedAudioSource);
 
-        Decorator.Instance.SetPhoto(texture, photoSize, photoAngle);
-        //photoRnderer.material.SetTexture("_MainTex", texture);
+        if (photoAngle == 0)
+        {
+            Texture2D texture = new Texture2D(webCamTexture.width, webCamTexture.height);
+            texture.SetPixels32(photoBuffer);
+            texture.Apply();
+            Decorator.Instance.SetPhoto(texture, photoAngle);
+        }
+        else
+        {
+            Texture2D texture = new Texture2D(webCamTexture.height, webCamTexture.width);
+            photoBuffer = Color32Utils.RotateColorArrayLeft(photoBuffer, webCamTexture.width, webCamTexture.height);
+            texture.SetPixels32(photoBuffer);
+            texture.Apply();
+            Decorator.Instance.SetPhoto(texture, photoAngle);
+        }
 
         yield return new WaitForSeconds(1);
-        gameObject.SetActive(false);
         decorator.Show();
+        gameObject.SetActive(false);
     }
-
     #endregion
 }
