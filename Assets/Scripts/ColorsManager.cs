@@ -13,6 +13,10 @@ public class ColorsManager : MonoBehaviour
     public RectTransform topColorRoot;
     public RectTransform combinationsRoot;
 
+    public List<GameObject> colorButtons;
+    public List<GameObject> colorButtonHighlights;
+    private GameObject currentColorButton;
+
     private int colorWidgetCount = 36;
 
     private List<GameObject> colorWidgets = new List<GameObject>();
@@ -21,14 +25,14 @@ public class ColorsManager : MonoBehaviour
     #region MonoBehaviour overrides
     private void Start ()
     {
-        GetColorWidgets(trendsRoot, colorWidgetPrefab);
-        GetColorWidgets(topColorRoot, colorWidgetPrefab);
-        GetCombinationWidgets(combinationsRoot, combinationWidgetPrefab);
+        CreateGetColorWidgets(trendsRoot, colorWidgetPrefab);
+        CreateGetColorWidgets(topColorRoot, colorWidgetPrefab);
+        CreateCombinationWidgets(combinationsRoot, combinationWidgetPrefab);
     }
     #endregion
 
     #region Class implementation
-    private void GetColorWidgets(RectTransform t, GameObject prefab)
+    private void CreateGetColorWidgets(RectTransform t, GameObject prefab)
     {
         for (int i = 0; i < colorWidgetCount; i++)
         {
@@ -36,12 +40,12 @@ public class ColorsManager : MonoBehaviour
             go.transform.SetParent(t, false);
             go.GetComponent<Graphic>().color = new Color(Random.value, Random.value, Random.value);
             colorWidgets.Add(go);
-            go.GetComponent<Button>().onClick.AddListener(() => PickColor(go));
+            go.GetComponent<Button>().onClick.AddListener(() =>  PickColor(go));
             go.GetComponent<ColorWidgetBase>().waitToShow = i * 0.05f;
         }
     }
 
-    private void GetCombinationWidgets(RectTransform t, GameObject prefab)
+    private void CreateCombinationWidgets(RectTransform t, GameObject prefab)
     {
         for (int i = 0; i < colorWidgetCount; i++)
         {
@@ -55,64 +59,83 @@ public class ColorsManager : MonoBehaviour
             go.GetComponent<ColorWidgetBase>().waitToShow = i * 0.05f;
         }
     }
-    private GameObject buttonToAddColorTo;
 
     public void AddColor(GameObject button)
     {
-        buttonToAddColorTo = button;
+        currentColorButton = button;
         this.gameObject.SetActive(true);
+    }
+
+    public void SetCurrentColor(int index)
+    {
+        for (int i = 0; i < colorButtonHighlights.Count; i++)
+        {
+            colorButtonHighlights[i].SetActive(i == index);
+        }
     }
 
     public void PickColor(GameObject colorWidget)
     {
         gameObject.SetActive(false);
 
-        // Remove old
-        if (buttonToAddColorTo.GetComponentInChildren<ColorWidget>() != null)
+        // Remove old color
+        if (currentColorButton.GetComponentInChildren<ColorWidget>() != null)
         {
-            GameObject goToRemove = buttonToAddColorTo.GetComponentInChildren<ColorWidget>().gameObject;
+            GameObject goToRemove = currentColorButton.GetComponentInChildren<ColorWidget>().gameObject;
             DestroyImmediate(goToRemove);
         }
 
-        if (buttonToAddColorTo.GetComponentInChildren<CombinationWidget>() != null)
-        {
-            GameObject goToRemove = buttonToAddColorTo.GetComponentInChildren<CombinationWidget>().gameObject;
-            DestroyImmediate(goToRemove);
-        }
-
+        // Add new color
         GameObject go = GameObject.Instantiate(colorWidget);
-        go.transform.SetParent(buttonToAddColorTo.transform, false);
+        go.transform.SetParent(currentColorButton.transform, false);
         go.transform.localPosition = Vector3.zero;
         go.transform.localScale = Vector3.one;
         go.GetComponent<Graphic>().raycastTarget = false;
         go.transform.SetAsFirstSibling();
 
+        // Pass color information to shader
+        int index = colorButtons.IndexOf(currentColorButton);
+
+        switch (index)
+        {
+            case 0: Decorator.Instance.photoRnderer.material.SetColor("_Color1", go.GetComponent<Graphic>().color); break;
+            case 1: Decorator.Instance.photoRnderer.material.SetColor("_Color2", go.GetComponent<Graphic>().color); break;
+            case 2: Decorator.Instance.photoRnderer.material.SetColor("_Color3", go.GetComponent<Graphic>().color); break;
+        }
     }
 
     public void PickCombination(GameObject combinationWidget)
     {
         gameObject.SetActive(false);
 
-        // Remove old
-        if (buttonToAddColorTo.GetComponentInChildren<ColorWidget>() != null)
+        // Remove old colors from buttons
+        for (int i = 0; i < colorButtons.Count; i++)
         {
-            GameObject goToRemove = buttonToAddColorTo.GetComponentInChildren<ColorWidget>().gameObject;
-            DestroyImmediate(goToRemove);
+            ColorWidget cg = colorButtons[i].GetComponentInChildren<ColorWidget>();
+
+            if (cg != null)
+                DestroyImmediate(cg.gameObject);
         }
 
-        if (buttonToAddColorTo.GetComponentInChildren<CombinationWidget>() != null)
+        // Add combination colors to buttons
+        for (int i = 0; i < colorButtons.Count; i++)
         {
-            GameObject goToRemove = buttonToAddColorTo.GetComponentInChildren<CombinationWidget>().gameObject;
-            DestroyImmediate(goToRemove);
+            // Add new color
+            GameObject go = GameObject.Instantiate(colorWidgetPrefab);
+            go.transform.SetParent(colorButtons[i].transform, false);
+            go.transform.localPosition = Vector3.zero;
+            go.transform.localScale = Vector3.one;
+            go.GetComponent<Graphic>().color = combinationWidget.GetComponent<CombinationWidget>().graphics[i].color;
+            go.GetComponent<Graphic>().raycastTarget = false;
+            go.transform.SetAsFirstSibling();
+
+            switch (i)
+            {
+                case 0: Decorator.Instance.photoRnderer.material.SetColor("_Color1", go.GetComponent<Graphic>().color); break;
+                case 1: Decorator.Instance.photoRnderer.material.SetColor("_Color2", go.GetComponent<Graphic>().color); break;
+                case 2: Decorator.Instance.photoRnderer.material.SetColor("_Color3", go.GetComponent<Graphic>().color); break;
+            }
         }
-
-        GameObject go = GameObject.Instantiate(combinationWidget);
-        go.transform.SetParent(buttonToAddColorTo.transform, false);
-        go.transform.localPosition = Vector3.zero;
-        go.transform.localScale = Vector3.one;
-        go.GetComponent<CombinationWidget>().buttonGraphic.raycastTarget = false;
-        go.transform.SetAsFirstSibling();
-
     }
     #endregion
 }

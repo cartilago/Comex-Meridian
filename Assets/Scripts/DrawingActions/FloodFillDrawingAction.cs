@@ -1,7 +1,9 @@
 ﻿using UnityEngine;
+using UnityEngine.EventSystems;
 using System.Collections;
+using System;
 
-public class FloodFillDrawingAction : DrawingActionBase
+public class FloodFillDrawingAction : DrawingActionBase, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
     #region Class members
     #endregion
@@ -22,4 +24,27 @@ public class FloodFillDrawingAction : DrawingActionBase
         Debug.Log("Flood fill applied Width: " + texture.width + " Height " + texture.height + " pos " + p);
     }
     #endregion
+
+    #region IBeginDragHandler
+    public void OnBeginDrag(PointerEventData eventData)
+    {
+        cachedTransform.position = Camera.main.ScreenToWorldPoint(eventData.position);
+    }
+    #endregion
+
+    #region IDragHandler
+    public void OnDrag(PointerEventData eventData)
+    {
+        cachedTransform.position = Camera.main.ScreenToWorldPoint(eventData.position);
+    }
+    #endregion
+
+    #region IDragHandler
+    public void OnEndDrag(PointerEventData eventData)
+    {
+        cachedTransform.position = Camera.main.ScreenToWorldPoint(eventData.position);
+        Apply();
+    }
+    #endregion
+
 }

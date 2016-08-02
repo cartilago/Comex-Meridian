@@ -6,28 +6,26 @@ public class CombinationWidget : ColorWidgetBase
 {
     #region Class members
     public Graphic buttonGraphic;
-    public Graphic graphic1;
-    public Graphic graphic2;
-    public Graphic graphic3;
+    public Graphic[] graphics;
     #endregion
 
     #region Class accessors
     public Color color1
     {
-        get { return graphic1.color; }
-        set { graphic1.color = value; }
+        get { return graphics[0].color; }
+        set { graphics[0].color = value; }
     }
 
     public Color color2
     {
-        get { return graphic2.color; }
-        set { graphic2.color = value; }
+        get { return graphics[1].color; }
+        set { graphics[1].color = value; }
     }
 
     public Color color3
     {
-        get { return graphic3.color; }
-        set { graphic3.color = value; }
+        get { return graphics[2].color; }
+        set { graphics[2].color = value; }
     }
     #endregion
 }

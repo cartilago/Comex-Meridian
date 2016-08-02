@@ -10,6 +10,7 @@ using System.Collections;
 public class FloodFillDrawingTool : DrawingToolBase
 {
     private FloodFillDrawingAction currentFloodFillDrawingAction;
+    private Vector3 startPosition;
 
     #region Class implementation
     override public void TouchDown(Vector2 pos)
@@ -29,6 +30,8 @@ public class FloodFillDrawingTool : DrawingToolBase
         currentFloodFillDrawingAction.cachedTransform.position = Camera.main.ScreenToWorldPoint(pos);
         currentFloodFillDrawingAction.Apply();
         currentFloodFillDrawingAction = null;
+        toggle.isOn = false;
+        Decorator.Instance.SetCurrentTool(Decorator.Instance.tools[0]);
     }
     #endregion
 }

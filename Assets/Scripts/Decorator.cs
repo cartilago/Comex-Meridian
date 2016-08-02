@@ -12,19 +12,15 @@ public class Decorator :  MonoSingleton<Decorator>
     public GameObject bottomSection;
     public InputField projectNameInputField;
     public Renderer photoRnderer;
-
-    private float zoom;
-    private Vector2 pan;
-
     public Texture2D startPhoto;
 
+    public DrawingToolBase[] tools;
+
     private Project currentProject;
-    //private Texture2D photo;
-
     private int currentTouch;
-    private bool touchOrMouseDown;
+    private bool mouseOrFingerDown;
 
-    private DrawingToolBase currentDrawingTool;
+    private DrawingToolBase currentTool;
     #endregion
 
     #region MonoBehaviour overrides
@@ -32,50 +28,36 @@ public class Decorator :  MonoSingleton<Decorator>
     {
         SetCurrentProject(new Project());
         SetPhoto(startPhoto,0);
+        currentTool = tools[0];
     }
-
-    Touch fisrtTouch;
-    Touch secondTouch;
-
-    Vector2 startPos;
-    bool panOrZoomStarted = false;
 
     private void Update()
     {
-        // One finger input, drawing tools
-        if (Input.touches.Length == 1)
-        {
-            if (currentDrawingTool == null)
-                return;
-        }
-
-        // Two finger input, zoom & pan
-        if (Input.touches.Length == 2 && panOrZoomStarted == false)
-        {
-            panOrZoomStarted = true;
-        }
-
-
+        if (currentTool == null)
+            return;
 
         // Touch input
-        for (int i = 0; i < Input.touches.Length; i++)
+        if (Input.touchCount == 1)
         {
-            if (Input.touches[i].phase == TouchPhase.Began)
+            Touch touchZero = Input.GetTouch(0);
+
+            if (touchZero.phase == TouchPhase.Began)
             {
-                // UI elements block mouse input
-                if (EventSystem.current.IsPointerOverGameObject(i))
+                // UI elements block touch input
+                if (EventSystem.current.IsPointerOverGameObject(touchZero.fingerId))
                     return;
 
-                touchOrMouseDown = true;
-                currentDrawingTool.TouchDown(Input.touches[i].position);
+                currentTool.TouchDown(touchZero.position);
+                mouseOrFingerDown = true;
             }
-            else if (Input.touches[i].phase == TouchPhase.Moved && touchOrMouseDown == true)
+            else if (touchZero.phase == TouchPhase.Moved && mouseOrFingerDown == true)
             {
-                currentDrawingTool.TouchMove(Input.touches[i].position);
+                currentTool.TouchMove(touchZero.position);
             }
-            else if (Input.touches[i].phase == TouchPhase.Ended && touchOrMouseDown == true)
+            else if (touchZero.phase == TouchPhase.Ended && mouseOrFingerDown == true)
             {
-                currentDrawingTool.TouchUp(Input.touches[i].position);
+                mouseOrFingerDown = false;
+                currentTool.TouchUp(touchZero.position);
             }
         }
 
@@ -85,21 +67,21 @@ public class Decorator :  MonoSingleton<Decorator>
             // UI elements block mouse input
             if (EventSystem.current.IsPointerOverGameObject())
                 return;
-         
-            touchOrMouseDown = true;
-            currentDrawingTool.TouchDown(Input.mousePosition);
+
+            mouseOrFingerDown = true;
+            currentTool.TouchDown(Input.mousePosition);
             return;
         }
 
-        if (touchOrMouseDown == true)
+        if (mouseOrFingerDown == true)
         {
-            currentDrawingTool.TouchMove(Input.mousePosition);
+            currentTool.TouchMove(Input.mousePosition);
         }
 
-        if (Input.GetMouseButtonUp(0) && touchOrMouseDown == true)
+        if (Input.GetMouseButtonUp(0) && mouseOrFingerDown == true)
         {
-            currentDrawingTool.TouchUp(Input.mousePosition);
-            touchOrMouseDown = false;
+            mouseOrFingerDown = false;
+            currentTool.TouchUp(Input.mousePosition);
         }
     }
     #endregion
@@ -166,9 +148,9 @@ public class Decorator :  MonoSingleton<Decorator>
     }
 
     #region Paint tools
-    public void SetCurrentDrawingTool(DrawingToolBase drawingTool)
+    public void SetCurrentTool(DrawingToolBase drawingTool)
     {
-        currentDrawingTool = drawingTool;
+        currentTool = drawingTool;
     }
 
     public void Undo()

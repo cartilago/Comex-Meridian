@@ -11,6 +11,8 @@ public class ZoomAndPan : MonoBehaviour
     #region MonoBehaviour overrides
     private void Update()
     {
+        return;
+
         // Pan
         if (Input.touchCount == 1)
         {

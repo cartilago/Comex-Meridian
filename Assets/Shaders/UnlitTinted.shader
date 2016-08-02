@@ -6,6 +6,9 @@ Shader "Custom/Unlit-Tinted"
 		_MainTex("MainTex", 2D) = "black" {}
 		_TintMask("Tint Mak", 2D) = "black" {}
 		_TintColor("Tint", Color) = (0.0, 0.0, 0.0, 0.0)
+		_Color1("Color 1", Color) = (1.0, 1.0, 1.0, 1.0)
+		_Color2("Color 2", Color) = (1.0, 1.0, 1.0, 1.0)
+		_Color3("Color 3", Color) = (1.0, 1.0, 1.0, 1.0)
 	}
 
 	SubShader
@@ -26,6 +29,9 @@ Shader "Custom/Unlit-Tinted"
 			sampler2D _TintMask;
 			half4	  _TintMask_ST;
 			fixed4 	  _TintColor;
+			fixed4 	  _Color1;
+			fixed4 	  _Color2;
+			fixed4 	  _Color3;
 
 			struct v2f
 			{
@@ -56,6 +62,26 @@ Shader "Custom/Unlit-Tinted"
 				return (result);
 			}
 
+
+			float3 rgb2hsv(fixed3 c)
+			{
+				float4 K = float4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+				float4 p = lerp(float4(c.bg, K.wz), float4(c.gb, K.xy), step(c.b, c.g));
+				float4 q = lerp(float4(p.xyw, c.r), float4(c.r, p.yzx), step(p.x, c.r));
+
+				float d = q.x - min(q.w, q.y);
+				float e = 1.0e-10;
+				return float3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+			}
+
+			fixed3 hsv2rgb(fixed3 c)
+			{
+				fixed4 K = fixed4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+				fixed3 p = abs(frac(c.xxx + K.xyz) * 6.0 - K.www);
+				return c.z * lerp(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+			}
+
+
 			v2f vert(appdata_base v)
 			{
 				v2f o;
@@ -75,7 +101,11 @@ Shader "Custom/Unlit-Tinted"
 				fixed4 c = tex2D(_MainTex, i.uv_MainTex);
 				fixed4 m = tex2D(_TintMask, i.uv_TintMask);
 
-				fixed3 r = lerp(c.rgb, ShiftColor(c.rgb, fixed3(100,1,1)), m.r);
+				fixed3 tint = rgb2hsv(_Color1.rgb);
+
+				//fixed3 r = lerp(c.rgb, ShiftColor(c.rgb, fixed3(0,0,1)) * _Color1.rgb , m.r);
+				fixed3 r = lerp(c.rgb, ShiftColor(c.rgb, fixed3(tint.r * -360, tint.g, 1)), m.r);
+				
 	
 				return fixed4(r, 1);
 			}

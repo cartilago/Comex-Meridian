@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 using System.Collections;
 
 /// <summary>
@@ -9,6 +10,7 @@ using System.Collections;
 /// </summary>
 public class DrawingToolBase : MonoBehaviour
 {
+    public Toggle toggle;
     public GameObject drawingActionPrefab;
 
     #region Class implementation
