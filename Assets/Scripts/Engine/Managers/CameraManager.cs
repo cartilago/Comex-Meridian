@@ -23,6 +23,7 @@ public class CameraManager : MonoSingleton<CameraManager>
     private WebCamAuthorizationStatus aurhorizationStatus = WebCamAuthorizationStatus.Off;
     private Vector2 photoSize;
     private float photoAngle;
+    private bool verticallyMirrored;
     #endregion
 
     #region Class accessors
@@ -54,12 +55,13 @@ public class CameraManager : MonoSingleton<CameraManager>
     {
         previewRenderer.gameObject.SetActive(true);
 
-        // Restart WebCam
+        // Start WebCam
         if (aurhorizationStatus == WebCamAuthorizationStatus.Off || aurhorizationStatus == WebCamAuthorizationStatus.Denied)
         {
             StartCoroutine(StartCamera());
         }
 
+        // Playback webcam texture 
         if (webCamTexture != null && aurhorizationStatus == WebCamAuthorizationStatus.Authorized)
         {
             webCamTexture.Play();
@@ -74,7 +76,7 @@ public class CameraManager : MonoSingleton<CameraManager>
         previewRenderer.gameObject.SetActive(false);
 
         // Pause WebCam
-        if (webCamTexture != null && aurhorizationStatus == WebCamAuthorizationStatus.Authorized)
+        if (webCamTexture != null && webCamTexture.isPlaying == true)
         {
             webCamTexture.Pause();
         }
@@ -96,9 +98,9 @@ public class CameraManager : MonoSingleton<CameraManager>
     IEnumerator StartCamera()
     {
         // Request WebCam's user authorization
-        yield return Application.RequestUserAuthorization(UserAuthorization.WebCam | UserAuthorization.Microphone);
+        yield return Application.RequestUserAuthorization(UserAuthorization.WebCam);
 
-        if (Application.HasUserAuthorization(UserAuthorization.WebCam | UserAuthorization.Microphone))
+        if (Application.HasUserAuthorization(UserAuthorization.WebCam))
         {
             aurhorizationStatus = WebCamAuthorizationStatus.Authorized;
                 
@@ -115,18 +117,20 @@ public class CameraManager : MonoSingleton<CameraManager>
 
         // Find back camera
         for (int i = 0; i < webcamDevices.Length; i++)
+        {
             if (webcamDevices[i].isFrontFacing == false)
                 backCamName = webcamDevices[i].name;
+        }
 
         // Set WebCam resolution, ensure to get a texture at least the double size of a screen
         webCamTexture = new WebCamTexture(backCamName);
         webCamTexture.requestedWidth = Screen.width * 4;
         webCamTexture.requestedHeight = Screen.height * 4;
         webCamTexture.requestedFPS = 60;
-
         webCamTexture.Play();
 
         photoAngle = (webCamTexture.videoRotationAngle != 0) ? webCamTexture.videoRotationAngle + 180 : 0;
+        verticallyMirrored = webCamTexture.videoVerticallyMirrored;
 
         // Adjust preview to match photo orientation & size
         float screenAspectRatio = (float)Screen.height / (float)Screen.width;
@@ -145,15 +149,14 @@ public class CameraManager : MonoSingleton<CameraManager>
 
     public void TakeSnapshot()
     {
+        // Grab the current Webcam's image
+        webCamTexture.Pause();
         StartCoroutine(TakeSnapshotCoroutine());
     }
 
     private IEnumerator TakeSnapshotCoroutine()
     {
         Color32[] photoBuffer = null;
-
-        // Grab the current Webcam's image
-        webCamTexture.Pause();
 
         photoBuffer = webCamTexture.GetPixels32();
         photoSFX.Play(cachedAudioSource);
