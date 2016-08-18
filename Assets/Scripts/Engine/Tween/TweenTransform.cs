@@ -22,11 +22,17 @@ public class TweenTransform : OptimizedGameObject
     public Vector3 endRotation;
     public Vector3 startScale = Vector3.one;
     public Vector3 endScale = Vector3.one;
+
+    private enum ETweenState {Out, In}; 
+    private ETweenState tweenState;
     #endregion
 
     #region Class implementation
     public void TweenIn()
     {
+    	if (tweenState == ETweenState.In)
+    		return;
+
         cachedRectTransform.anchoredPosition3D = startPosition;
         cachedTransform.localEulerAngles = startRotation;
         cachedRectTransform.localScale = startScale;
@@ -34,10 +40,15 @@ public class TweenTransform : OptimizedGameObject
         TweenManager.AnchoredPositionTo(cachedRectTransform, endPosition, inDuraion, delay, inInterpolationType);
         TweenManager.RotateTo(cachedRectTransform, endRotation, inDuraion, delay, inInterpolationType);
         TweenManager.ScaleTo(cachedRectTransform, endScale, inDuraion, delay, inInterpolationType);
+
+        tweenState = ETweenState.In;
     }
 
     public void TweenOut()
     {
+		if (tweenState == ETweenState.Out)
+    		return;
+
         cachedRectTransform.anchoredPosition3D = endPosition;
         cachedTransform.localEulerAngles = endRotation;
         cachedRectTransform.localScale = endScale;
@@ -45,6 +56,8 @@ public class TweenTransform : OptimizedGameObject
         TweenManager.AnchoredPositionTo(cachedRectTransform, startPosition, inDuraion, delay, inInterpolationType);
         TweenManager.RotateTo(cachedRectTransform, startRotation, inDuraion, delay, inInterpolationType);
         TweenManager.ScaleTo(cachedRectTransform, startScale, inDuraion, delay, inInterpolationType);
+
+		tweenState = ETweenState.Out;
     }
     #endregion
 }

@@ -98,9 +98,9 @@ public class ColorsManager : MonoBehaviour
 
         switch (index)
         {
-            case 0: Decorator.Instance.photoRnderer.material.SetColor("_Color1", go.GetComponent<Graphic>().color); break;
-            case 1: Decorator.Instance.photoRnderer.material.SetColor("_Color2", go.GetComponent<Graphic>().color); break;
-            case 2: Decorator.Instance.photoRnderer.material.SetColor("_Color3", go.GetComponent<Graphic>().color); break;
+            case 0: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color1", go.GetComponent<Graphic>().color); break;
+            case 1: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color2", go.GetComponent<Graphic>().color); break;
+            case 2: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color3", go.GetComponent<Graphic>().color); break;
         }
     }
 
@@ -131,9 +131,9 @@ public class ColorsManager : MonoBehaviour
 
             switch (i)
             {
-                case 0: Decorator.Instance.photoRnderer.material.SetColor("_Color1", go.GetComponent<Graphic>().color); break;
-                case 1: Decorator.Instance.photoRnderer.material.SetColor("_Color2", go.GetComponent<Graphic>().color); break;
-                case 2: Decorator.Instance.photoRnderer.material.SetColor("_Color3", go.GetComponent<Graphic>().color); break;
+                case 0: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color1", go.GetComponent<Graphic>().color); break;
+                case 1: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color2", go.GetComponent<Graphic>().color); break;
+                case 2: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color3", go.GetComponent<Graphic>().color); break;
             }
         }
     }

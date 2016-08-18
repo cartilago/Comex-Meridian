@@ -17,7 +17,7 @@ public class FloodFillDrawingTool : DrawingToolBase
     {
         currentFloodFillDrawingAction = GameObject.Instantiate(drawingActionPrefab).GetComponent<FloodFillDrawingAction>();
         currentFloodFillDrawingAction.cachedTransform.position = Camera.main.ScreenToWorldPoint(pos);
-        Decorator.Instance.GetCurrentProject().AddDrawingAction(currentFloodFillDrawingAction);
+        DecoratorPanel.Instance.GetCurrentProject().AddDrawingAction(currentFloodFillDrawingAction);
     }
 
     override public void TouchMove(Vector2 pos)
@@ -31,7 +31,7 @@ public class FloodFillDrawingTool : DrawingToolBase
         currentFloodFillDrawingAction.Apply();
         currentFloodFillDrawingAction = null;
         toggle.isOn = false;
-        Decorator.Instance.SetCurrentTool(Decorator.Instance.tools[0]);
+        DecoratorPanel.Instance.SetCurrentTool(DecoratorPanel.Instance.tools[0]);
     }
     #endregion
 }

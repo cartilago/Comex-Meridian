@@ -43,7 +43,7 @@ public class ZoomAndPan : MonoBehaviour
             // Make sure the zoomFactor never drops below 10% pixel.
             zoomFactor = Mathf.Max(zoomFactor, 0.1f);
 
-            Camera.main.orthographicSize = Decorator.Instance.GetBaseOrthographicSize() * zoomFactor;
+            Camera.main.orthographicSize = DecoratorPanel.Instance.GetBaseOrthographicSize() * zoomFactor;
         }
     }
     #endregion

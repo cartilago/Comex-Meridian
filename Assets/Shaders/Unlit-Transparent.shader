@@ -1,4 +1,4 @@
-﻿Shader "Custom/Unlit"
+﻿Shader "Custom/Unlit-Transparent"
 {
 	Properties
 	{
@@ -7,13 +7,14 @@
 
 	SubShader
 	{
-		Tags{ "RenderType" = "Opaque" "Queue" = "Geometry" }
+		Tags{ "RenderType" = "Transparent" "Queue" = "Transparent" }
 
 		Pass
 		{
 			Tags{ "LightMode" = "Vertex" }
 
 			Cull Off
+			Blend SrcAlpha OneMinusSrcAlpha
 
 			CGPROGRAM
 			#pragma vertex vert

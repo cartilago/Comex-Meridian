@@ -12,7 +12,7 @@ public class FileManager : MonoBehaviour
     #region Class implementation
     public void SaveProject()
     {
-        string filename = Application.persistentDataPath + "/" + Decorator.Instance.GetCurrentProject().name + ".project";
+        string filename = Application.persistentDataPath + "/" + DecoratorPanel.Instance.GetCurrentProject().name + ".project";
 
         if (System.IO.File.Exists(filename) == true)
         {
@@ -22,7 +22,7 @@ public class FileManager : MonoBehaviour
             confirmDialog.onAccept.AddListener(() => AcceptedFileOverwriteDelegate(filename));
         }
         else
-            Decorator.Instance.SaveFile(filename);
+            DecoratorPanel.Instance.SaveFile(filename);
     }
 
     public void LoadProject()
@@ -39,7 +39,7 @@ public class FileManager : MonoBehaviour
 
     public void AcceptedFileOverwriteDelegate(string filename)
     {
-        Decorator.Instance.SaveFile(filename);
+        DecoratorPanel.Instance.SaveFile(filename);
     }
     #endregion
 }

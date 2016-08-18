@@ -15,15 +15,8 @@ public class DrawingActionBase : OptimizedGameObject, ISerializationCallbackRece
     #endregion
 
     #region ISerializationCallbackReceiver interface implementation
-    virtual public void OnAfterDeserialize()
-    {
-       // throw new NotImplementedException();
-    }
+    virtual public void OnAfterDeserialize() {}
 
-    virtual public void OnBeforeSerialize()
-    {
-        Debug.Log("Has ben serialized");
-        //throw new NotImplementedException();
-    }
+    virtual public void OnBeforeSerialize() {}
     #endregion
 }

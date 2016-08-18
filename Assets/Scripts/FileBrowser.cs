@@ -117,12 +117,12 @@ public class FileBrowser : MonoBehaviour
 
     public void AcceptedFileOverwriteDelegate(string filename)
     {
-        Decorator.Instance.SaveFile(filename);
+        DecoratorPanel.Instance.SaveFile(filename);
     }
 
     public void AcceptedFileLoadDelegate(string filename)
     {
-        Decorator.Instance.LoadFile(filename);
+        DecoratorPanel.Instance.LoadFile(filename);
     }
 
     public void AcceptedFileDeleteDelegate(string filename)

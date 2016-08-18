@@ -4,15 +4,19 @@ using UnityEngine.EventSystems;
 using System.Collections;
 using Meridian.Framework.Utils;
 
-public class Decorator :  MonoSingleton<Decorator>
+public class DecoratorPanel :  Panel
 {
     #region Class members
     public GameObject fileMenu;
     public GameObject topSection;
     public GameObject bottomSection;
     public InputField projectNameInputField;
-    public Renderer photoRnderer;
+    public Renderer photoRenderer;
+    public Renderer canvasRenderer;
     public Texture2D startPhoto;
+
+    public Camera photoCamera;
+    public Camera canvasCamera;
 
     public DrawingToolBase[] tools;
 
@@ -23,11 +27,30 @@ public class Decorator :  MonoSingleton<Decorator>
     private DrawingToolBase currentTool;
     #endregion
 
+    #region Class accessors
+    static private DecoratorPanel _instance;
+    static public DecoratorPanel Instance
+    {
+    	get
+    	{
+    		if (_instance == null)
+    			_instance = FindObjectOfType<DecoratorPanel>();
+
+    		return _instance;
+    	}
+    }
+    #endregion
+
     #region MonoBehaviour overrides
+    private void Awake()
+   	{
+   		_instance = this;
+   	}
+
     private void Start()
     {
         SetCurrentProject(new Project());
-        SetPhoto(startPhoto,0);
+        SetPhoto(startPhoto);
         currentTool = tools[0];
     }
 
@@ -97,7 +120,7 @@ public class Decorator :  MonoSingleton<Decorator>
         Debug.Log("Current project drawing actions " + currentProject.drawingActions.Count);
 
         if (projectPhoto != null)
-            SetPhoto(projectPhoto, project.photoAngle);
+            SetPhoto(projectPhoto);
     }
 
     public Project GetCurrentProject()
@@ -118,15 +141,24 @@ public class Decorator :  MonoSingleton<Decorator>
         return (photoSize.y / 2) * (screenAspectRatio / photoAspectRatio);
     }
 
-    public void SetPhoto(Texture2D photo, float angle)
+    public void SetPhoto(Texture2D photo)
     {
+    	/*
+		Color32[] pixels = photo.GetPixels32();
+		pixels = Color32Utils.ConvertToHSV(pixels);
+		Texture2D hsvTexture = new Texture2D(photo.width, photo.height);
+		hsvTexture.SetPixels32(pixels);
+		hsvTexture.Apply();*/
+
         currentProject.SetPhoto(photo);
         Vector2 photoSize = new Vector2(photo.width, photo.height);      
         float screenAspectRatio = (float)Screen.height / (float)Screen.width;
         float photoAspectRatio = photoSize.y / photoSize.x;
-        photoRnderer.transform.localScale = photoSize;
-        photoRnderer.material.SetTexture("_MainTex", photo);
-        Camera.main.orthographicSize = GetBaseOrthographicSize(); // (photoSize.y / 2) * (screenAspectRatio / photoAspectRatio);
+		canvasRenderer.transform.localScale = photoRenderer.transform.localScale = photoSize; 
+		canvasCamera.orthographicSize = photoCamera.orthographicSize = GetBaseOrthographicSize();
+		canvasCamera.aspect = photoCamera.aspect;
+		photoRenderer.material.SetTexture("_MainTex", photo);
+		//photoRenderer.material.SetTexture("_MainTex", hsvTexture);
 
         currentProject.ClearDrawingActions();
     }
@@ -136,7 +168,7 @@ public class Decorator :  MonoSingleton<Decorator>
         topSection.gameObject.SetActive(false);
         bottomSection.gameObject.SetActive(false);
         currentProject.Hide();
-        photoRnderer.gameObject.SetActive(false);
+        photoRenderer.gameObject.SetActive(false);
     }
 
     public void Show()
@@ -144,7 +176,7 @@ public class Decorator :  MonoSingleton<Decorator>
         topSection.gameObject.SetActive(true);
         bottomSection.gameObject.SetActive(true);
         currentProject.Show();
-        photoRnderer.gameObject.SetActive(true);
+        photoRenderer.gameObject.SetActive(true);
     }
 
     #region Paint tools

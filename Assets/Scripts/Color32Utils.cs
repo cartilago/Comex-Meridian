@@ -116,4 +116,32 @@ public static class Color32Utils
 
         return rotatedArray;
     }
+
+    /// <summary>
+    /// Converts all colors to ther HSV representation.
+    /// </summary>
+    /// <returns>The to HS.</returns>
+    /// <param name="array">Array.</param>
+    /// <param name="width">Width.</param>
+    /// <param name="height">Height.</param>
+	static public Color32[] ConvertToHSV(Color32[] array)
+	{
+		Color32[] convertedArray = new Color32[array.Length];
+
+		for (int i = 0; i < array.Length; i++)
+		{
+			Color c = array[i];
+
+			Vector4 K = new Vector4(0.0f, -1.0f / 3.0f, 2.0f / 3.0f, -1.0f);
+			Vector4 p = c.g < c.b ? new Vector4(c.b, c.g, K.w, K.z) : new Vector4(c.g, c.b, K.x, K.y);
+			Vector4 q = c.r < p.x ? new Vector4(p.x, p.y, p.w, c.r) : new Vector4(c.r, p.y, p.z, p.x);
+
+	    	float d = q.x - Mathf.Min(q.w, q.y);
+	    	float e = 1.0e-10f;
+	    
+			convertedArray[i] = new Color (Mathf.Abs(q.z + (q.w - q.y) / (6.0f * d + e)), d / (q.x + e), q.x, c.a);
+		}
+
+		return convertedArray;
+	}
 }

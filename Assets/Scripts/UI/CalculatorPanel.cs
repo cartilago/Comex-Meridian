@@ -1,18 +1,32 @@
-﻿using UnityEngine;
+﻿/// <summary>
+/// Calculator panel.
+/// Provides functionalty for calculating material needed to cover a wall area.
+///
+/// Created by Jorge L. Chavez Herrera.
+/// </summary>
+using UnityEngine;
 using UnityEngine.UI;
-
 using System.Collections;
 
-public class Calculator : MonoBehaviour
+
+public class CalculatorPanel : Panel 
 {
-    public InputField height;
+	#region Class members
+	public InputField height;
     public InputField width;
     public InputField windowCount;
-
-    public GameObject resultPanel;
+	public GameObject resultPanel;
     public Text resultText;
+	#endregion
 
-    public void GetTotal()
+	#region MonoBehaviour overrides
+	#endregion
+
+	#region Panel overrides
+	#endregion
+
+	#region Class implementation
+	public void GetTotal()
     {
         float h = 0;
         float.TryParse(height.text, out h);
@@ -27,4 +41,5 @@ public class Calculator : MonoBehaviour
 
         resultPanel.SetActive(true);
     }
+	#endregion
 }
