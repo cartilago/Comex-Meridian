@@ -1,133 +1,238 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class PaintTool : DrawingToolBase 
 {
 	#region Class members
-	public Camera canvasCamera;
-	public Renderer canvasRenderer;
-	public SpriteRenderer _brushSprite;
+	private Vector2 startCanvasPosition;
 
-	private PaintDrawingAction currentPaintDrawingAction;
-	static public SpriteRenderer brushSprite;
+	static private Color[] maskColors = new Color[]{Color.red, Color.green, Color.blue};
 	#endregion
-
-	#region Class accessors
-	private RenderTexture _renderTexture;
-	private RenderTexture renderTexture 
-	{
-		get 
-		{
-			if (_renderTexture == null)
-			{
-				_renderTexture = new RenderTexture((int)canvasRenderer.transform.localScale.x, (int)canvasRenderer.transform.localScale.y, 0);
-			}
-			else
-			{
-				if (_renderTexture.width != (int)canvasRenderer.transform.localScale.x || _renderTexture.height != (int)canvasRenderer.transform.localScale.y)
-					_renderTexture = new RenderTexture((int)canvasRenderer.transform.localScale.x, (int)canvasRenderer.transform.localScale.y, 0);
-			}
-
-			return _renderTexture;
-		} 
-	}
-	#endregion
-
-	#region MonoBehaviour overrides
-	private void Awake()
-	{
-		brushSprite = _brushSprite;
-		brushSprite.gameObject.SetActive(false);
-		canvasCamera.gameObject.SetActive(false);
-	}
-
-	private void SetupCanvas()
-	{
-		// Setup render tecture & camera
-		canvasCamera.targetTexture = renderTexture;
-		canvasCamera.gameObject.SetActive(true);
-		RenderTexture.active = canvasCamera.targetTexture;
-		GL.Clear(false, true, Color.clear, 0);
-		canvasRenderer.material.mainTexture = canvasCamera.targetTexture;
-
-		// Set brush size, 10% of the actual size of the image
-		float area = canvasRenderer.transform.localScale.x * canvasRenderer.transform.localScale.y * (1.0f / 256.0f) * 0.025f;
-
-		float yFit = (canvasCamera.orthographicSize * 2) / canvasRenderer.transform.localScale.y;
-
-		brushSprite.transform.localScale = new Vector3(area, area * yFit, 1);
-	}
-	#endregion
-	 
 
 	#region DrawingToolBase overrides
-	override public void TouchDown(Vector2 pos)
+	override public void TouchDown(Vector2 screenPos)
     {
-    	SetupCanvas();
-    	canvasRenderer.gameObject.SetActive(true);
-		brushSprite.gameObject.SetActive(true);
-
-		currentPaintDrawingAction = GameObject.Instantiate(drawingActionPrefab).GetComponent<PaintDrawingAction>();
-		currentPaintDrawingAction.cachedTransform.position = Camera.main.ScreenToWorldPoint(pos);
-		DecoratorPanel.Instance.GetCurrentProject().AddDrawingAction(currentPaintDrawingAction);
-
-		SetBrushPosition(pos);
+    	FingerCanvas.Instance.SetupCanvas(); 
+    	FingerCanvas.Instance.SetVisible(true);
+		FingerCanvas.Instance.SetNormalBrush(); 
+		startCanvasPosition = FingerCanvas.Instance.GetCanvasPosition(screenPos);
+		FingerCanvas.Instance.SetBrushPosition(screenPos);
     }
 
-	override public void TouchMove(Vector2 pos)
+	override public void TouchMove(Vector2 screenPos)
     {
-		SetBrushPosition(pos);
+		FingerCanvas.Instance.SetBrushPosition(screenPos);
     }
 
 	override public void TouchUp(Vector2 pos)
     {
-		brushSprite.gameObject.SetActive(false);
-		canvasCamera.gameObject.SetActive(false);
-		canvasRenderer.gameObject.SetActive(false);
+		FingerCanvas.Instance.SetVisible(false);
+
+		// Get the photo hsv pixel buffer
+		ColorBuffer hsvPixelBuffer = DecoratorPanel.Instance.GetHSVPixelBuffer();
 
 		// Grab render texture pixels
-		RenderTexture.active = renderTexture;
-		Texture2D texture = new Texture2D(renderTexture.width, renderTexture.height, TextureFormat.RGB24, false);
-		texture.ReadPixels(new Rect(0, 0, renderTexture.width, renderTexture.height), 0, 0);
-		texture.Apply();
+		RenderTexture renderTexture = FingerCanvas.Instance.renderTexture;
 
-		DecoratorPanel.Instance.photoRenderer.material.SetTexture("_TintMask", texture);
-		//Color32[] colors = texture.GetPixels32();
+		RenderTexture.active = renderTexture;
+		Texture2D masksTexture = new Texture2D(renderTexture.width, renderTexture.height, TextureFormat.ARGB32, false);
+		masksTexture.ReadPixels(new Rect(0, 0, renderTexture.width, renderTexture.height), 0, 0);
+		masksTexture.Apply();
+		ColorBuffer masksPixelBuffer = new ColorBuffer(masksTexture.width, masksTexture.height, masksTexture.GetPixels());
+
+		// Flood fill operation
+		FloodFill(hsvPixelBuffer, masksPixelBuffer, startCanvasPosition, maskColors[ColorsManager.Instance.GetCurrentColor()], 0.5f, 0.5f, 0.5f);
+
+		// Clear finger painting on mask's alpha channel
+		for (int a = 0; a < masksPixelBuffer.data.Length; a++)
+			masksPixelBuffer.data[a].a = 0;
+
+		// Now set the modified pixels back to the masks texture
+		masksTexture.SetPixels(masksPixelBuffer.data);
+		masksTexture.Apply();
+		// Finally copy the modified masks texture back to the render texture
+		Graphics.Blit(masksTexture, renderTexture);
 	}
     #endregion
 
     #region Class implementation
-    private void SetBrushPosition(Vector2 screenPos)
+	private void FloodFill(ColorBuffer HSVBuffer, ColorBuffer masksBuffer, Vector2 startPos, Color maskColor, float hueTolerance, float saturationTolerance, float valueTolerance)
     {
-		Ray ray = Camera.main.ScreenPointToRay(screenPos);
+        Point start = new Point((int)startPos.x, (int)startPos.y);
 
-		RaycastHit hit;
+        ColorBuffer copyBmp = new ColorBuffer(HSVBuffer.width, HSVBuffer.height, (Color[])HSVBuffer.data.Clone());
 
-		if (Physics.Raycast(ray, out hit))
+        Color originalColor = HSVBuffer[start.X, start.Y]; 
+        Color originalHSV = originalColor; ;
+		int width =  HSVBuffer.width; 
+        int height = HSVBuffer.height; 
+
+		if (originalColor == maskColor)
+        {
+            return;
+        }
+
+
+        /*
+        if (originalColor.g < 0.75f && originalColor.b > 0.75f)
+        {
+        	hueTolerance = 0.05f;
+        	saturationTolerance = 0.9f;
+        	valueTolerance = 0.9f;
+        }*/
+
+        copyBmp[start.X, start.Y] = maskColor;
+
+        Queue<Point> openNodes = new Queue<Point>();
+        openNodes.Enqueue(start);
+
+        int i = 0;
+
+        // TODO: remove this
+        // emergency switch so it doesn't hang if something goes wrong
+        int emergency = width * height;
+
+        while (openNodes.Count > 0)
+        {
+            i++;
+
+            if (i > emergency)
+            {
+                return;
+            }
+
+            Point current = openNodes.Dequeue();
+            int x = current.X;
+            int y = current.Y;
+           
+            if (x > 0)
+            {
+				Color hsvColor = copyBmp[x - 1, y];
+
+                if (/*masksBuffer[x - 1, y] != maskColor &&*/
+                	Mathf.Abs(hsvColor.r - originalHSV.r) < hueTolerance && 
+                    Mathf.Abs(hsvColor.g - originalHSV.g) < saturationTolerance && 
+                    Mathf.Abs(hsvColor.b - originalHSV.b) < valueTolerance)
+                {
+                    copyBmp[x - 1, y] = maskColor;
+					masksBuffer[x -1, y] = maskColor;
+                    openNodes.Enqueue(new Point(x - 1, y));
+                }
+            }
+            if (x < width - 1)
+            {
+				Color hsvColor = copyBmp[x + 1, y];
+
+				if (/*masksBuffer[x + 1, y] != maskColor &&*/
+                 	Mathf.Abs(hsvColor.r - originalHSV.r) < hueTolerance &&
+                    Mathf.Abs(hsvColor.g - originalHSV.g) < saturationTolerance &&
+                    Mathf.Abs(hsvColor.b - originalHSV.b) < valueTolerance)
+                {
+                    copyBmp[x + 1, y] = maskColor;
+					masksBuffer[x + 1, y] = maskColor;
+                    openNodes.Enqueue(new Point(x + 1, y));
+                }
+            }
+            if (y > 0)
+            {
+				Color hsvColor = copyBmp[x, y - 1];
+
+				if (/*masksBuffer[x, y - 1] != maskColor &&*/
+                	Mathf.Abs(hsvColor.r - originalHSV.r) < hueTolerance &&
+                    Mathf.Abs(hsvColor.g - originalHSV.g) < saturationTolerance &&
+                    Mathf.Abs(hsvColor.b - originalHSV.b) < valueTolerance)
+                {
+                    copyBmp[x, y - 1] = maskColor;
+					masksBuffer[x, y - 1] = maskColor;
+                    openNodes.Enqueue(new Point(x, y - 1));
+                }
+            }
+            if (y < height - 1) 
+            {
+				Color hsvColor = copyBmp[x, y + 1];
+
+				if (/*masksBuffer[x, y + 1] != maskColor &&*/
+                	Mathf.Abs(hsvColor.r - originalHSV.r) < hueTolerance &&
+                    Mathf.Abs(hsvColor.g - originalHSV.g) < saturationTolerance &&
+                    Mathf.Abs(hsvColor.b - originalHSV.b) < valueTolerance)
+                {
+                    copyBmp[x, y + 1] = maskColor;
+					masksBuffer[x, y + 1] = maskColor;
+                    openNodes.Enqueue(new Point(x, y + 1));
+                }
+            }
+        }
+    }
+
+   
+    /*
+    unsafe void LinearFloodFill4( byte* scan0, int x, int y,Size bmpsize, int stride, byte* startcolor)
 		{
-			brushSprite.transform.position = new Vector3( (hit.textureCoord.x - 0.5f) * canvasCamera.orthographicSize, 
-				(hit.textureCoord.y - 0.5f) * canvasCamera.orthographicSize / canvasCamera.aspect, 0); 
+			
+			//offset the pointer to the point passed in
+			int* p=(int*) (scan0+(CoordsToIndex(x,y, stride)));
+			
+			
+			//FIND LEFT EDGE OF COLOR AREA
+			int LFillLoc=x; //the location to check/fill on the left
+			int* ptr=p; //the pointer to the current location
+			while(true)
+			{
+				ptr[0]=m_fillcolor; 	 //fill with the color
+				PixelsChecked[LFillLoc,y]=true;
+				LFillLoc--; 		 	 //de-increment counter
+				ptr-=1;				 	 //de-increment pointer
+				if(LFillLoc<=0 || !CheckPixel((byte*)ptr,startcolor) ||  (PixelsChecked[LFillLoc,y]))
+					break;			 	 //exit loop if we're at edge of bitmap or color area
+				
+			}
+			LFillLoc++;
+			
+			//FIND RIGHT EDGE OF COLOR AREA
+			int RFillLoc=x; //the location to check/fill on the left
+			ptr=p;
+			while(true)
+			{
+				ptr[0]=m_fillcolor; //fill with the color
+				PixelsChecked[RFillLoc,y]=true;
+				RFillLoc++; 		 //increment counter
+				ptr+=1;				 //increment pointer
+				if(RFillLoc>=bmpsize.Width || !CheckPixel((byte*)ptr,startcolor) ||  (PixelsChecked[RFillLoc,y]))
+					break;			 //exit loop if we're at edge of bitmap or color area
+				
+			}
+			RFillLoc--;
+			
+			
+			//START THE LOOP UPWARDS AND DOWNWARDS			
+			ptr=(int*)(scan0+CoordsToIndex(LFillLoc,y,stride));
+			for(int i=LFillLoc;i<=RFillLoc;i++)
+			{
+				//START LOOP UPWARDS
+				//if we're not above the top of the bitmap and the pixel above this one is within the color tolerance
+				if(y>0 && CheckPixel((byte*)(scan0+CoordsToIndex(i,y-1,stride)),startcolor) && (!(PixelsChecked[i,y-1])))
+					LinearFloodFill4(scan0, i,y-1,bmpsize,stride,startcolor);
+				//START LOOP DOWNWARDS
+				if(y<(bmpsize.Height-1) && CheckPixel((byte*)(scan0+CoordsToIndex(i,y+1,stride)),startcolor) && (!(PixelsChecked[i,y+1])))
+					LinearFloodFill4(scan0, i,y+1,bmpsize,stride,startcolor);
+				ptr+=1;
+			}
+			
 		}
+    */
+   
+
+	private struct Point
+    {
+        public int X;
+        public int Y;
+
+        public Point(int x, int y)
+        {
+            this.X = x;
+            this.Y = y;
+        }
     }
     #endregion
 }
-
-/*
-vec3 rgb2hsv(vec3 c)
-{
-    vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
-	vec4 p = c.g < c.b ? vec4(c.bg, K.wz) : vec4(c.gb, K.xy);
-    vec4 q = c.r < p.x ? vec4(p.xyw, c.r) : vec4(c.r, p.yzx);
-
-    float d = q.x - min(q.w, q.y);
-    float e = 1.0e-10;
-    return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
-}
-
-vec3 hsv2rgb(vec3 c)
-{
-    vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
-    vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
-    return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
-}
-*/

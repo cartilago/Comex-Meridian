@@ -1,0 +1,143 @@
+﻿using UnityEngine;
+using UnityEngine.UI;
+using System.Collections;
+using Meridian.Framework.Utils;
+
+
+public class FingerCanvas : MonoSingleton<FingerCanvas> 
+{
+	#region Class members
+	public Camera canvasCamera;
+	public Renderer canvasRenderer;
+	public SpriteRenderer brushSprite;
+	public Material[] brushMaterials;
+
+	private bool newTexture;
+	#endregion
+
+	#region Class accessors
+	/// <summary>
+	/// Gets the render texture for the canvas.
+	/// </summary>
+	/// <value>The render texture.</value>
+	private RenderTexture _renderTexture;
+	public RenderTexture renderTexture 
+	{
+		get 
+		{
+			if (_renderTexture == null)
+			{
+				_renderTexture = new RenderTexture((int)canvasRenderer.transform.localScale.x, (int)canvasRenderer.transform.localScale.y, 0);
+				newTexture = true;
+
+			}
+			else
+			{
+				if (_renderTexture.width != (int)canvasRenderer.transform.localScale.x || _renderTexture.height != (int)canvasRenderer.transform.localScale.y)
+				{
+					_renderTexture = new RenderTexture((int)canvasRenderer.transform.localScale.x, (int)canvasRenderer.transform.localScale.y, 0);
+					newTexture = true;
+				}
+			}
+
+			return _renderTexture;
+		} 
+	}
+	#endregion
+
+	#region MonoBehaviour overrides
+	private void Start()
+	{
+		SetVisible(false);
+	}
+	#endregion
+
+	#region Class implementation
+	public void SetVisible(bool isVisible)
+	{
+		brushSprite.gameObject.SetActive(isVisible);
+		canvasCamera.gameObject.SetActive(isVisible);
+		canvasRenderer.gameObject.SetActive(isVisible);
+	}
+
+	/// <summary>
+	/// Sets the normal brush.
+	/// </summary>
+	public void SetNormalBrush()
+	{
+		brushSprite.material = brushMaterials[0];
+	}
+
+	/// <summary>
+	/// Sets the eraser brush.
+	/// </summary>
+	public void SetEraserBrush()
+	{
+		brushSprite.material = brushMaterials[1];
+	}
+
+	/// <summary>
+	/// Setups the drawing canvas.
+	/// </summary>
+	public void SetupCanvas()
+	{
+		// Setup render tecture & camera
+		canvasCamera.targetTexture = renderTexture;
+		canvasCamera.gameObject.SetActive(true);
+
+		if (newTexture == true)
+		{
+			RenderTexture.active = canvasCamera.targetTexture;
+			GL.Clear(false, true, Color.clear, 0);
+			newTexture = false;
+		}
+
+		canvasRenderer.material.mainTexture = canvasCamera.targetTexture;
+
+		// Set brush size, 10% of the actual size of the image
+		float area = canvasRenderer.transform.localScale.x * canvasRenderer.transform.localScale.y * (1.0f / 256.0f) * 0.025f;
+		float yFit = (canvasCamera.orthographicSize * 2) / canvasRenderer.transform.localScale.y;
+		brushSprite.transform.localScale = new Vector3(area, area * yFit, 1);
+		brushSprite.color = new Color(0,0,0,1); // Brush always draws on alpha so it can be cleared after each stroke
+
+		switch (ColorsManager.Instance.GetCurrentColor())
+		{
+			case 0: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color4", DecoratorPanel.Instance.photoRenderer.material.GetColor("_Color1")); break;
+			case 1: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color4", DecoratorPanel.Instance.photoRenderer.material.GetColor("_Color2"));break;
+			case 2: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color4", DecoratorPanel.Instance.photoRenderer.material.GetColor("_Color3"));break;
+		}
+
+
+		// Set canvas texture for photo shader, tint colors encoded as r,g,b
+		DecoratorPanel.Instance.photoRenderer.material.SetTexture("_TintMask", renderTexture);
+	}
+
+	/// <summary>
+	/// Sets the brush position in canvas.
+	/// </summary>
+	/// <param name="screenPos">Screen position.</param>
+	public void SetBrushPosition(Vector2 screenPos)
+    {
+		Vector3 worldPos = Camera.main.ScreenToWorldPoint(screenPos);
+		Vector3 photoLocalPos = DecoratorPanel.Instance.photoRenderer.transform.InverseTransformPoint(worldPos);
+		Vector3 canvasPosition = new Vector3(photoLocalPos.x * renderTexture.width, photoLocalPos.y * renderTexture.height, 0);
+
+		float aspectCorrection = (canvasCamera.orthographicSize * 2) / (float)renderTexture.height;
+		brushSprite.transform.position = new Vector2(canvasPosition.x, canvasPosition.y * aspectCorrection);
+    }
+
+    /// <summary>
+    /// Transforms screen to canvas coordinates
+    /// </summary>
+    /// <returns>The canvas position.</returns>
+    /// <param name="screenPos">Screen position.</param>
+    public Vector2 GetCanvasPosition(Vector2 screenPos)
+    {
+		Vector3 worldPos = Camera.main.ScreenToWorldPoint(screenPos);
+		Vector3 photoLocalPos = DecoratorPanel.Instance.photoRenderer.transform.InverseTransformPoint(worldPos) + new Vector3(0.5f,0.5f);
+
+		return new Vector2(photoLocalPos.x * renderTexture.width, photoLocalPos.y * renderTexture.height);
+    }
+	#endregion
+	 
+}

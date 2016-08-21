@@ -25,6 +25,7 @@ public class DecoratorPanel :  Panel
     private bool mouseOrFingerDown;
 
     private DrawingToolBase currentTool;
+	private ColorBuffer HSVPixelBuffer;
     #endregion
 
     #region Class accessors
@@ -56,9 +57,6 @@ public class DecoratorPanel :  Panel
 
     private void Update()
     {
-        if (currentTool == null)
-            return;
-
         // Touch input
         if (Input.touchCount == 1)
         {
@@ -93,7 +91,6 @@ public class DecoratorPanel :  Panel
 
             mouseOrFingerDown = true;
             currentTool.TouchDown(Input.mousePosition);
-            return;
         }
 
         if (mouseOrFingerDown == true)
@@ -143,12 +140,10 @@ public class DecoratorPanel :  Panel
 
     public void SetPhoto(Texture2D photo)
     {
-    	/*
-		Color32[] pixels = photo.GetPixels32();
-		pixels = Color32Utils.ConvertToHSV(pixels);
+		HSVPixelBuffer = new ColorBuffer(photo.width, photo.height, Color32Utils.ConvertToHSV(photo.GetPixels()));
 		Texture2D hsvTexture = new Texture2D(photo.width, photo.height);
-		hsvTexture.SetPixels32(pixels);
-		hsvTexture.Apply();*/
+		hsvTexture.SetPixels(HSVPixelBuffer.data);
+		hsvTexture.Apply();
 
         currentProject.SetPhoto(photo);
         Vector2 photoSize = new Vector2(photo.width, photo.height);      
@@ -157,10 +152,14 @@ public class DecoratorPanel :  Panel
 		canvasRenderer.transform.localScale = photoRenderer.transform.localScale = photoSize; 
 		canvasCamera.orthographicSize = photoCamera.orthographicSize = GetBaseOrthographicSize();
 		canvasCamera.aspect = photoCamera.aspect;
-		photoRenderer.material.SetTexture("_MainTex", photo);
-		//photoRenderer.material.SetTexture("_MainTex", hsvTexture);
+		photoRenderer.material.SetTexture("_MainTex", hsvTexture);
 
         currentProject.ClearDrawingActions();
+    }
+
+	public ColorBuffer GetHSVPixelBuffer()
+    {
+		return HSVPixelBuffer;
     }
 
     public void Hide()
@@ -182,7 +181,10 @@ public class DecoratorPanel :  Panel
     #region Paint tools
     public void SetCurrentTool(DrawingToolBase drawingTool)
     {
-        currentTool = drawingTool;
+    	if (currentTool == drawingTool)
+			currentTool = tools[0];
+		else
+        	currentTool = drawingTool;
     }
 
     public void Undo()

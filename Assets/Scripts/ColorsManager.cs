@@ -2,8 +2,9 @@
 using UnityEngine.UI;
 using System.Collections.Generic;
 using System.Collections;
+using Meridian.Framework.Utils;
 
-public class ColorsManager : MonoBehaviour
+public class ColorsManager : MonoSingleton<ColorsManager>
 {
     #region Class members
     public GameObject colorWidgetPrefab;
@@ -18,6 +19,7 @@ public class ColorsManager : MonoBehaviour
     private GameObject currentColorButton;
 
     private int colorWidgetCount = 36;
+    private int currentColor =0;
 
     private List<GameObject> colorWidgets = new List<GameObject>();
     #endregion
@@ -72,6 +74,13 @@ public class ColorsManager : MonoBehaviour
         {
             colorButtonHighlights[i].SetActive(i == index);
         }
+
+        currentColor = index;
+    }
+
+    public int GetCurrentColor()
+    {
+    	return currentColor;
     }
 
     public void PickColor(GameObject colorWidget)
@@ -98,9 +107,9 @@ public class ColorsManager : MonoBehaviour
 
         switch (index)
         {
-            case 0: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color1", go.GetComponent<Graphic>().color); break;
-            case 1: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color2", go.GetComponent<Graphic>().color); break;
-            case 2: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color3", go.GetComponent<Graphic>().color); break;
+            case 0: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color1", Color32Utils.ConvertToHSV(go.GetComponent<Graphic>().color)); break;
+            case 1: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color2", Color32Utils.ConvertToHSV(go.GetComponent<Graphic>().color)); break;
+            case 2: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color3", Color32Utils.ConvertToHSV(go.GetComponent<Graphic>().color)); break;
         }
     }
 
@@ -131,9 +140,9 @@ public class ColorsManager : MonoBehaviour
 
             switch (i)
             {
-                case 0: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color1", go.GetComponent<Graphic>().color); break;
-                case 1: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color2", go.GetComponent<Graphic>().color); break;
-                case 2: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color3", go.GetComponent<Graphic>().color); break;
+                case 0: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color1", Color32Utils.ConvertToHSV(go.GetComponent<Graphic>().color)); break;
+				case 1: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color2", Color32Utils.ConvertToHSV(go.GetComponent<Graphic>().color)); break;
+                case 2: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color3", Color32Utils.ConvertToHSV(go.GetComponent<Graphic>().color)); break;
             }
         }
     }
