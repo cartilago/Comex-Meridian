@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
+using System.Collections.Generic;
 using Meridian.Framework.Utils;
 
 
@@ -13,6 +14,7 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
 	public Material[] brushMaterials;
 
 	private bool newTexture;
+	private Stack<byte[]>undoBuffer = new Stack<byte[]>();
 	#endregion
 
 	#region Class accessors
@@ -90,12 +92,13 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
 			RenderTexture.active = canvasCamera.targetTexture;
 			GL.Clear(false, true, Color.clear, 0);
 			newTexture = false;
+			SaveUndo();
 		}
 
 		canvasRenderer.material.mainTexture = canvasCamera.targetTexture;
 
 		// Set brush size, 10% of the actual size of the image
-		float area = canvasRenderer.transform.localScale.x * canvasRenderer.transform.localScale.y * (1.0f / 256.0f) * 0.025f;
+		float area = canvasRenderer.transform.localScale.x * canvasRenderer.transform.localScale.y * (1.0f / 256.0f) * 0.0125f;
 		float yFit = (canvasCamera.orthographicSize * 2) / canvasRenderer.transform.localScale.y;
 		brushSprite.transform.localScale = new Vector3(area, area * yFit, 1);
 		brushSprite.color = new Color(0,0,0,1); // Brush always draws on alpha so it can be cleared after each stroke
@@ -138,6 +141,41 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
 
 		return new Vector2(photoLocalPos.x * renderTexture.width, photoLocalPos.y * renderTexture.height);
     }
+
+    /// <summary>
+    /// Clear tint masks.
+    /// </summary>
+    public void Clear()
+   	{
+		RenderTexture.active = renderTexture;
+		GL.Clear(false, true, Color.clear, 0);
+	}
+
+	/// <summary>
+	/// Saves current canvas image to undo stack, image is encoded as PNG.
+	/// </summary>
+	public void SaveUndo()
+	{
+		RenderTexture.active = renderTexture;
+		Texture2D masksTexture = new Texture2D(renderTexture.width, renderTexture.height, TextureFormat.ARGB32, false);
+		masksTexture.ReadPixels(new Rect(0, 0, renderTexture.width, renderTexture.height), 0, 0);
+		masksTexture.Apply();
+
+		undoBuffer.Push(masksTexture.EncodeToPNG());
+	}
+
+	/// <summary>
+	/// Restores a PNG encode image from the from undo stack.
+	/// </summary>
+	public void RestoreFromUndoStack()
+	{
+		if (undoBuffer.Count > 0)
+		{
+			Texture2D saved = new Texture2D(2,2);
+			saved.LoadImage(undoBuffer.Pop());
+			Graphics.Blit(saved, renderTexture);
+		}
+	}
 	#endregion
 	 
 }

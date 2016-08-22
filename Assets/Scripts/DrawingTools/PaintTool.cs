@@ -14,6 +14,7 @@ public class PaintTool : DrawingToolBase
 	override public void TouchDown(Vector2 screenPos)
     {
     	FingerCanvas.Instance.SetupCanvas(); 
+		FingerCanvas.Instance.SaveUndo();
     	FingerCanvas.Instance.SetVisible(true);
 		FingerCanvas.Instance.SetNormalBrush(); 
 		startCanvasPosition = FingerCanvas.Instance.GetCanvasPosition(screenPos);
@@ -42,7 +43,7 @@ public class PaintTool : DrawingToolBase
 		ColorBuffer masksPixelBuffer = new ColorBuffer(masksTexture.width, masksTexture.height, masksTexture.GetPixels());
 
 		// Flood fill operation
-		FloodFill(hsvPixelBuffer, masksPixelBuffer, startCanvasPosition, maskColors[ColorsManager.Instance.GetCurrentColor()], 0.5f, 0.5f, 0.5f);
+		FloodFill(hsvPixelBuffer, masksPixelBuffer, startCanvasPosition, maskColors[ColorsManager.Instance.GetCurrentColor()], 0.1f, 0.5f, 0.5f);
 
 		// Clear finger painting on mask's alpha channel
 		for (int a = 0; a < masksPixelBuffer.data.Length; a++)
@@ -53,6 +54,8 @@ public class PaintTool : DrawingToolBase
 		masksTexture.Apply();
 		// Finally copy the modified masks texture back to the render texture
 		Graphics.Blit(masksTexture, renderTexture);
+
+
 	}
     #endregion
 
@@ -73,6 +76,14 @@ public class PaintTool : DrawingToolBase
             return;
         }
 
+		Debug.Log("Hue :" + originalColor.r + " Sat: " + originalColor.g + " Val : " + originalColor.b);
+
+		if (originalColor.b > 0.85f)
+		{
+			hueTolerance = 1;
+			saturationTolerance = 0.1f;
+        	valueTolerance = .5f;
+		}
 
         /*
         if (originalColor.g < 0.75f && originalColor.b > 0.75f)

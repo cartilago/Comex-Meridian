@@ -154,7 +154,7 @@ public class DecoratorPanel :  Panel
 		canvasCamera.aspect = photoCamera.aspect;
 		photoRenderer.material.SetTexture("_MainTex", hsvTexture);
 
-        currentProject.ClearDrawingActions();
+        FingerCanvas.Instance.Clear();
     }
 
 	public ColorBuffer GetHSVPixelBuffer()
@@ -179,17 +179,36 @@ public class DecoratorPanel :  Panel
     }
 
     #region Paint tools
-    public void SetCurrentTool(DrawingToolBase drawingTool)
+    public void SetPaintTool(bool active)
     {
-    	if (currentTool == drawingTool)
+    	if (active == true)
+    	{
+    		currentTool = tools[1];
+    	}
+
+		if (tools[1].toggle.isOn == false && tools[2].toggle.isOn == false)
 			currentTool = tools[0];
-		else
-        	currentTool = drawingTool;
     }
+
+    public void SetEraserTool(bool active)
+   	{
+   		if (active == true)
+   		{
+			currentTool = tools[2];
+   		}
+
+		if (tools[1].toggle.isOn == false && tools[2].toggle.isOn == false)
+			currentTool = tools[0];
+   	}
 
     public void Undo()
     {
-        currentProject.RemoveLastDrawingAction();
+        FingerCanvas.Instance.RestoreFromUndoStack();
+    }
+
+	public void Clear()
+    {
+        FingerCanvas.Instance.Clear();
     }
 
     #endregion

@@ -12,7 +12,7 @@ using Meridian.Framework.Managers;
 
 public enum WebCamAuthorizationStatus { Off, Requested, Authorized, Denied };
 
-public class CameraManager : MonoSingleton<CameraManager>
+public class CameraPanel : Panel
 {
     #region Class members
     public DecoratorPanel decorator;
@@ -27,7 +27,19 @@ public class CameraManager : MonoSingleton<CameraManager>
     private bool verticallyMirrored;
     #endregion
 
-    #region Class accessors
+	#region Class accessors
+	static private CameraPanel _instance;
+	static public CameraPanel Instance
+    {
+    	get
+    	{
+    		if (_instance == null)
+				_instance = FindObjectOfType<CameraPanel>();
+
+    		return _instance;
+    	}
+    }
+
     private AudioSource _cachedAudioSource;
     private AudioSource cachedAudioSource
     {
@@ -68,6 +80,7 @@ public class CameraManager : MonoSingleton<CameraManager>
         {
             webCamTexture.Play();
 			initializingMessage.SetActive(false);
+			previewRenderer.gameObject.SetActive(true);
         }
 
         decorator.Hide();
@@ -85,7 +98,7 @@ public class CameraManager : MonoSingleton<CameraManager>
         decorator.Show();
     }
 
-    override public void OnDestroy()
+    public void OnDestroy()
     {
         // Stop WebCam
         if (webCamTexture != null)

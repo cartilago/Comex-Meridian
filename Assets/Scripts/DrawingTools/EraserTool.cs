@@ -15,6 +15,7 @@ public class EraserTool : DrawingToolBase
     {
 		FingerCanvas.Instance.SetupCanvas(); 
     	FingerCanvas.Instance.SetVisible(true);
+		FingerCanvas.Instance.SaveUndo();
 		FingerCanvas.Instance.SetEraserBrush(); 
 		FingerCanvas.Instance.SetBrushPosition(screenPos);
 		brushSprite.color = Color.black;

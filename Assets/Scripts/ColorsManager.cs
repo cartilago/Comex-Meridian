@@ -30,6 +30,7 @@ public class ColorsManager : MonoSingleton<ColorsManager>
         CreateGetColorWidgets(trendsRoot, colorWidgetPrefab);
         CreateGetColorWidgets(topColorRoot, colorWidgetPrefab);
         CreateCombinationWidgets(combinationsRoot, combinationWidgetPrefab);
+        gameObject.SetActive(false);
     }
     #endregion
 
