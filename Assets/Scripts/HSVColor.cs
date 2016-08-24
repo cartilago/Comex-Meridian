@@ -95,10 +95,10 @@ public class HSVColorBuffer
 	private readonly int height;
 	private readonly int width;
 
-	public HSVColorBuffer(int height, int width, Color[] colorData)
+	public HSVColorBuffer(int width, int height, Color[] colorData)
 	{
-		this.height = height;
 		this.width = width;
+		this.height = height;
 
 		this.data = new HSVColor[colorData.Length];
 
@@ -110,11 +110,11 @@ public class HSVColorBuffer
 	{
 		get
 		{
-			return data[x + y * width];
+			return data[(y * width)+height];
 		}
 		set
 		{
-			data[x + y * width] = value;
+			data[(y * width) + x] = value;
 		}
 	}
 }

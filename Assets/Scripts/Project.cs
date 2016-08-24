@@ -8,9 +8,9 @@ public class Project
     #region Class members
     public string name;
     public string encodedPhoto;
-    public Vector2 photoSize;
-    public float photoAngle;
-    public List<DrawingActionBase> drawingActions = new List<DrawingActionBase>();
+    public string encodedMask;
+
+    public Color[] colors;
 
     [System.NonSerialized]
     public Texture2D photo;
@@ -22,43 +22,9 @@ public class Project
         name = "Tu proyecto Meridian";
     }
 
-    public void Hide()
-    {
-        for (int i = 0; i < drawingActions.Count; i++)
-            drawingActions[i].gameObject.SetActive(false);
-    }
-
-    public void Show()
-    {
-        for (int i = 0; i < drawingActions.Count; i++)
-            drawingActions[i].gameObject.SetActive(true);
-    }
-
-    public void AddDrawingAction(DrawingActionBase drawingAction)
-    {
-        drawingActions.Add(drawingAction);
-    }
-
-    public void RemoveLastDrawingAction()
-    {
-        DrawingActionBase lastDrawingAction = drawingActions[drawingActions.Count - 1];
-
-        drawingActions.Remove(lastDrawingAction);
-        GameObject.Destroy(lastDrawingAction.gameObject);
-    }
-
-    public void ClearDrawingActions()
-    {
-        for (int i = 0; i < drawingActions.Count; i++)
-            GameObject.Destroy(drawingActions[i].gameObject);
-
-        drawingActions.Clear();
-    }
-
     public void SetPhoto(Texture2D photo)
     {
         this.photo = photo;
-        ClearDrawingActions();
     }
 
     public Texture2D GetPhoto()
@@ -66,9 +32,10 @@ public class Project
         return photo;
     }
 
-    public void SetEncodedPhoto(Texture2D photo)
+    public void SetEncodedPhoto(Texture2D photo, Texture2D mask)
     {
         encodedPhoto = Texture2DToString(photo);
+        encodedMask = Texture2DToString(mask);
     }
 
     public Texture2D GetEncodedPhoto()
@@ -79,8 +46,22 @@ public class Project
         return null;
     }
 
-    public void UpdateImage()
+	public Texture2D GetEncodedMask()
     {
+        if (encodedMask != null)
+            return Texture2DFromString(encodedMask);
+
+        return null;
+    }
+
+    public void SetColors(Color[] colors)
+    {
+    	this.colors = colors;
+    }
+
+	public Color[] GetColors()
+    {
+    	return colors;
     }
 
     static public string Texture2DToString(Texture2D texture)

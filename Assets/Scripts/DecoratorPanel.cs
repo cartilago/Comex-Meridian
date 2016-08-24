@@ -114,10 +114,20 @@ public class DecoratorPanel :  Panel
 
         Texture2D projectPhoto = project.GetEncodedPhoto();
 
-        Debug.Log("Current project drawing actions " + currentProject.drawingActions.Count);
-
         if (projectPhoto != null)
             SetPhoto(projectPhoto);
+
+		Texture2D projectMask = project.GetEncodedMask();
+
+		if (projectMask != null)
+			FingerCanvas.Instance.SetContents(projectMask);
+
+		if (currentProject.colors != null)
+		{
+			photoRenderer.material.SetColor("_Color1", currentProject.colors[0]);
+			photoRenderer.material.SetColor("_Color2", currentProject.colors[1]);
+			photoRenderer.material.SetColor("_Color3", currentProject.colors[2]);
+		}
     }
 
     public Project GetCurrentProject()
@@ -132,29 +142,34 @@ public class DecoratorPanel :  Panel
 
     public float GetBaseOrthographicSize()
     {
+		float screenAspectRatio = (float)Screen.height / (float)Screen.width;
         Vector2 photoSize = new Vector2(currentProject.GetPhoto().width, currentProject.GetPhoto().height);
-        float screenAspectRatio = (float)Screen.height / (float)Screen.width;
         float photoAspectRatio = photoSize.y / photoSize.x;
+
         return (photoSize.y / 2) * (screenAspectRatio / photoAspectRatio);
     }
 
     public void SetPhoto(Texture2D photo)
     {
+		FingerCanvas.Instance.Clear();
+
 		HSVPixelBuffer = new ColorBuffer(photo.width, photo.height, Color32Utils.ConvertToHSV(photo.GetPixels()));
+
+		// Convert photo to internal HSV representation, shader will convert it back to RGB.
 		Texture2D hsvTexture = new Texture2D(photo.width, photo.height);
 		hsvTexture.SetPixels(HSVPixelBuffer.data);
 		hsvTexture.Apply();
+		photoRenderer.material.SetTexture("_MainTex", hsvTexture);
 
-        currentProject.SetPhoto(photo);
-        Vector2 photoSize = new Vector2(photo.width, photo.height);      
-        float screenAspectRatio = (float)Screen.height / (float)Screen.width;
+		currentProject.SetPhoto(photo);
+	
+		// Set correct size for both camera orthographic view & photo renderer            
+		float screenAspectRatio = Screen.width / (float)Screen.height;//(float)Screen.height / (float)Screen.width;
+		Vector2 photoSize = new Vector2(photo.width, photo.height);  
         float photoAspectRatio = photoSize.y / photoSize.x;
 		canvasRenderer.transform.localScale = photoRenderer.transform.localScale = photoSize; 
 		canvasCamera.orthographicSize = photoCamera.orthographicSize = GetBaseOrthographicSize();
 		canvasCamera.aspect = photoCamera.aspect;
-		photoRenderer.material.SetTexture("_MainTex", hsvTexture);
-
-        FingerCanvas.Instance.Clear();
     }
 
 	public ColorBuffer GetHSVPixelBuffer()
@@ -166,7 +181,6 @@ public class DecoratorPanel :  Panel
     {
         topSection.gameObject.SetActive(false);
         bottomSection.gameObject.SetActive(false);
-        currentProject.Hide();
         photoRenderer.gameObject.SetActive(false);
     }
 
@@ -174,7 +188,6 @@ public class DecoratorPanel :  Panel
     {
         topSection.gameObject.SetActive(true);
         bottomSection.gameObject.SetActive(true);
-        currentProject.Show();
         photoRenderer.gameObject.SetActive(true);
     }
 
@@ -208,6 +221,7 @@ public class DecoratorPanel :  Panel
 
 	public void Clear()
     {
+    	FingerCanvas.Instance.SaveUndo();
         FingerCanvas.Instance.Clear();
     }
 
@@ -218,8 +232,8 @@ public class DecoratorPanel :  Panel
     {
         fileMenu.SetActive(false);
 
-        if (currentProject.GetPhoto() != null)
-            currentProject.SetEncodedPhoto(currentProject.GetPhoto());
+        currentProject.SetEncodedPhoto(currentProject.GetPhoto(), FingerCanvas.Instance.GetSnapshot());
+		currentProject.SetColors(new Color[]{photoRenderer.material.GetColor("_Color1"), photoRenderer.material.GetColor("_Color2"), photoRenderer.material.GetColor("_Color3")});
 
         string serializedProject = JsonUtility.ToJson(currentProject);
         System.IO.File.WriteAllText(filename, serializedProject);

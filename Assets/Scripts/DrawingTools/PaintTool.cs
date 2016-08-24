@@ -76,7 +76,7 @@ public class PaintTool : DrawingToolBase
             return;
         }
 
-		Debug.Log("Hue :" + originalColor.r + " Sat: " + originalColor.g + " Val : " + originalColor.b);
+		//Debug.Log("Hue :" + originalColor.r + " Sat: " + originalColor.g + " Val : " + originalColor.b);
 
 		if (originalColor.b > 0.85f)
 		{

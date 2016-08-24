@@ -37,6 +37,11 @@ public class FileManager : MonoBehaviour
         fileBrowser.gameObject.SetActive(true);
     }
 
+	public void ShareProject()
+    {
+        Debug.Log("ShareProject");
+    }
+
     public void AcceptedFileOverwriteDelegate(string filename)
     {
         DecoratorPanel.Instance.SaveFile(filename);

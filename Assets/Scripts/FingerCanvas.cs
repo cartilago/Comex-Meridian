@@ -110,9 +110,9 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
 			case 2: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color4", DecoratorPanel.Instance.photoRenderer.material.GetColor("_Color3"));break;
 		}
 
-
 		// Set canvas texture for photo shader, tint colors encoded as r,g,b
 		DecoratorPanel.Instance.photoRenderer.material.SetTexture("_TintMask", renderTexture);
+
 	}
 
 	/// <summary>
@@ -148,7 +148,34 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
     public void Clear()
    	{
 		RenderTexture.active = renderTexture;
-		GL.Clear(false, true, Color.clear, 0);
+		GL.Clear(false, true, new Color(0,0,0,0));
+		GL.Flush();
+		Debug.Log("Cleared");
+	}
+
+	/// <summary>
+	/// Gets a snapshot of the current rendertexture contents..
+	/// </summary>
+	/// <returns>The snapshot.</returns>
+	public Texture2D GetSnapshot()
+	{
+		RenderTexture.active = renderTexture;
+		Texture2D masksTexture = new Texture2D(renderTexture.width, renderTexture.height, TextureFormat.ARGB32, false);
+		masksTexture.ReadPixels(new Rect(0, 0, renderTexture.width, renderTexture.height), 0, 0);
+		masksTexture.Apply();
+
+		return masksTexture;
+	}
+
+	/// <summary>
+	/// Sets the contents of the renderTexture.
+	/// </summary>
+	/// <param name="contents">Contents.</param>
+	public void SetContents(Texture2D contents)
+	{
+		SetupCanvas();
+		Graphics.Blit(contents, renderTexture);
+		ClearUndoStack();
 	}
 
 	/// <summary>
@@ -156,12 +183,7 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
 	/// </summary>
 	public void SaveUndo()
 	{
-		RenderTexture.active = renderTexture;
-		Texture2D masksTexture = new Texture2D(renderTexture.width, renderTexture.height, TextureFormat.ARGB32, false);
-		masksTexture.ReadPixels(new Rect(0, 0, renderTexture.width, renderTexture.height), 0, 0);
-		masksTexture.Apply();
-
-		undoBuffer.Push(masksTexture.EncodeToPNG());
+		undoBuffer.Push(GetSnapshot().EncodeToPNG());
 	}
 
 	/// <summary>
@@ -173,8 +195,13 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
 		{
 			Texture2D saved = new Texture2D(2,2);
 			saved.LoadImage(undoBuffer.Pop());
-			Graphics.Blit(saved, renderTexture);
+			SetContents(saved);
 		}
+	}
+
+	private void ClearUndoStack()
+	{
+		undoBuffer.Clear();
 	}
 	#endregion
 	 
