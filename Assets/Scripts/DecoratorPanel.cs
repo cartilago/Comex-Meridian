@@ -158,6 +158,7 @@ public class DecoratorPanel :  Panel
 		// Convert photo to internal HSV representation, shader will convert it back to RGB.
 		Texture2D hsvTexture = new Texture2D(photo.width, photo.height);
 		hsvTexture.SetPixels(HSVPixelBuffer.data);
+		hsvTexture.filterMode = FilterMode.Point;
 		hsvTexture.Apply();
 		photoRenderer.material.SetTexture("_MainTex", hsvTexture);
 

@@ -81,6 +81,14 @@ public class CameraPanel : Panel
             webCamTexture.Play();
 			initializingMessage.SetActive(false);
 			previewRenderer.gameObject.SetActive(true);
+
+			Vector2 photoSize = new Vector2(webCamTexture.width, webCamTexture.height);      
+
+			if (webCamTexture.videoVerticallyMirrored)
+				photoSize.y *= -1;
+
+			previewRenderer.transform.localScale = photoSize;
+			previewRenderer.material.SetTexture("_MainTex", webCamTexture);
         }
 
         decorator.Hide();
@@ -171,7 +179,7 @@ public class CameraPanel : Panel
 	        float photoAspectRatio = photoSize.x / photoSize.y;
 
 			if (webCamTexture.videoVerticallyMirrored)
-				photoSize.x *= -1;
+				photoSize.y *= -1;
 
 			previewRenderer.transform.localScale = photoSize;
 
@@ -179,66 +187,6 @@ public class CameraPanel : Panel
 
 			Camera.main.orthographicSize = (photoSize.x / 2) * (screenAspectRatio / photoAspectRatio);
 		}
-
-
-		/*
-		previewImage.color = Color.white;
-
-		// change as user rotates iPhone or Android:
-		int cwNeeded = webCamTexture.videoRotationAngle;
-		// Unity helpfully returns the _clockwise_ twist needed
-		// guess nobody at Unity noticed their product works in counterclockwise:
-		int ccwNeeded = -cwNeeded;
-
-		// IF the image needs to be mirrored, it seems that it
-		// ALSO needs to be spun. Strange: but true.
-		if (webCamTexture.videoVerticallyMirrored) 
-			ccwNeeded += 180;
-
-		previewImage.texture = webCamTexture;
-
-		previewImage.rectTransform.localEulerAngles = new Vector3(0, 0, webCamTexture.videoRotationAngle);
-
-		CanvasScaler cs = FindObjectOfType<CanvasScaler>();
-
-		// Vertically mirrored ?, fix uv coords
-		previewImage.uvRect = webCamTexture.videoVerticallyMirrored ? fixedRect : defaultRect;
-
-		if (webCamTexture.videoRotationAngle == 0)
-		{
-			float aspectRatio = (float)webCamTexture.height / (float)webCamTexture.width;
-
-			previewImage.rectTransform.sizeDelta = new Vector2 (cs.referenceResolution.x, cs.referenceResolution.x * aspectRatio);
-		}
-		else
-		{
-			previewImage.rectTransform.sizeDelta = new Vector2 (cs.referenceResolution.y, cs.referenceResolution.x);
-		}
-
-        photoAngle = ccwNeeded; 
-        verticallyMirrored = webCamTexture.videoVerticallyMirrored;
-
-        // Adjust preview to match photo orientation & size
-		float screenAspectRatio = (float)Screen.height / (float)Screen.width;
-        photoSize = new Vector2(webCamTexture.width, webCamTexture.height);
-        float photoAspectRatio = photoSize.y / photoSize.x;
-  
-        if (photoAngle == 0)
-            Camera.main.orthographicSize = (photoSize.y / 2) * (screenAspectRatio / photoAspectRatio);
-        else
-            Camera.main.orthographicSize = (photoSize.x / 2) * (screenAspectRatio / (photoSize.x / photoSize.y));
-
-        Camera.main.transform.position = Vector3.zero;
-
-		if (verticallyMirrored)
-			photoSize.y = -photoSize.y;
-
-        DebugManager.Log("Angle: " + webCamTexture.videoRotationAngle);
-		DebugManager.Log("Vertically mirrored: " + webCamTexture.videoVerticallyMirrored);
-		DebugManager.Log("Dimensions: " + webCamTexture.width + "x" + webCamTexture.height);
-		DebugManager.Log("Canvas Scaler Dimensions: " + cs.referenceResolution.x + "x" + cs.referenceResolution.y);
-		DebugManager.Log("Screen Dimensions: " + Screen.width + "x" + Screen.height);
-		DebugManager.Log("Size Delta: " + previewImage.rectTransform.sizeDelta.x + "x" + previewImage.rectTransform.sizeDelta.y);*/
     }
 
     public void TakeSnapshot()

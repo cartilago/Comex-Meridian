@@ -16,10 +16,15 @@ public class CalculatorPanel : Panel
     public InputField width;
     public InputField windowCount;
 	public GameObject resultPanel;
+	public Text projectName;
     public Text resultText;
 	#endregion
 
 	#region MonoBehaviour overrides
+	void OnEnable()
+	{
+		projectName.text = DecoratorPanel.Instance.GetCurrentProject().name;
+	}
 	#endregion
 
 	#region Panel overrides

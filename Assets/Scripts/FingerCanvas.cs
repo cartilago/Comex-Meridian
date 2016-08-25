@@ -106,8 +106,8 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
 		switch (ColorsManager.Instance.GetCurrentColor())
 		{
 			case 0: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color4", DecoratorPanel.Instance.photoRenderer.material.GetColor("_Color1")); break;
-			case 1: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color4", DecoratorPanel.Instance.photoRenderer.material.GetColor("_Color2"));break;
-			case 2: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color4", DecoratorPanel.Instance.photoRenderer.material.GetColor("_Color3"));break;
+			case 1: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color4", DecoratorPanel.Instance.photoRenderer.material.GetColor("_Color2")); break;
+			case 2: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color4", DecoratorPanel.Instance.photoRenderer.material.GetColor("_Color3")); break;
 		}
 
 		// Set canvas texture for photo shader, tint colors encoded as r,g,b
