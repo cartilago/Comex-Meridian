@@ -54,8 +54,6 @@ public class PaintTool : DrawingToolBase
 		masksTexture.Apply();
 		// Finally copy the modified masks texture back to the render texture
 		Graphics.Blit(masksTexture, renderTexture);
-
-
 	}
     #endregion
 
@@ -67,7 +65,6 @@ public class PaintTool : DrawingToolBase
         ColorBuffer copyBmp = new ColorBuffer(HSVBuffer.width, HSVBuffer.height, (Color[])HSVBuffer.data.Clone());
 
         Color originalColor = HSVBuffer[start.X, start.Y]; 
-        Color originalHSV = originalColor; ;
 		int width =  HSVBuffer.width; 
         int height = HSVBuffer.height; 
 
@@ -76,22 +73,26 @@ public class PaintTool : DrawingToolBase
             return;
         }
 
-		//Debug.Log("Hue :" + originalColor.r + " Sat: " + originalColor.g + " Val : " + originalColor.b);
+        Debug.Log (originalColor);
 
-		if (originalColor.b > 0.85f)
+        // Deal with highly saturated colors
+		if (originalColor.g > 0.7f)
 		{
-			hueTolerance = 1;
+			hueTolerance = 0.1f;
 			saturationTolerance = 0.1f;
-        	valueTolerance = .5f;
+        	valueTolerance = 1;
+			Debug.Log("Saturated color");
 		}
 
-        /*
-        if (originalColor.g < 0.75f && originalColor.b > 0.75f)
-        {
-        	hueTolerance = 0.05f;
-        	saturationTolerance = 0.9f;
-        	valueTolerance = 0.9f;
-        }*/
+		// Deal with whites
+		if (originalColor.g < 0.15f && originalColor.b > 0.85f)
+		{
+			hueTolerance = 1;
+			saturationTolerance = 1;
+			valueTolerance = 1;
+			Debug.Log("White color");
+		} 
+
 
         copyBmp[start.X, start.Y] = maskColor;
 
@@ -122,9 +123,9 @@ public class PaintTool : DrawingToolBase
 				Color hsvColor = copyBmp[x - 1, y];
 
                 if (/*masksBuffer[x - 1, y] != maskColor &&*/
-                	Mathf.Abs(hsvColor.r - originalHSV.r) < hueTolerance && 
-                    Mathf.Abs(hsvColor.g - originalHSV.g) < saturationTolerance && 
-                    Mathf.Abs(hsvColor.b - originalHSV.b) < valueTolerance)
+					Mathf.Abs(hsvColor.r - originalColor.r) <= hueTolerance && 
+					Mathf.Abs(hsvColor.g - originalColor.g) <= saturationTolerance && 
+					Mathf.Abs(hsvColor.b - originalColor.b) <= valueTolerance)
                 {
                     copyBmp[x - 1, y] = maskColor;
 					masksBuffer[x -1, y] = maskColor;
@@ -136,9 +137,9 @@ public class PaintTool : DrawingToolBase
 				Color hsvColor = copyBmp[x + 1, y];
 
 				if (/*masksBuffer[x + 1, y] != maskColor &&*/
-                 	Mathf.Abs(hsvColor.r - originalHSV.r) < hueTolerance &&
-                    Mathf.Abs(hsvColor.g - originalHSV.g) < saturationTolerance &&
-                    Mathf.Abs(hsvColor.b - originalHSV.b) < valueTolerance)
+					Mathf.Abs(hsvColor.r - originalColor.r) <= hueTolerance &&
+					Mathf.Abs(hsvColor.g - originalColor.g) <= saturationTolerance &&
+					Mathf.Abs(hsvColor.b - originalColor.b) <= valueTolerance)
                 {
                     copyBmp[x + 1, y] = maskColor;
 					masksBuffer[x + 1, y] = maskColor;
@@ -150,9 +151,9 @@ public class PaintTool : DrawingToolBase
 				Color hsvColor = copyBmp[x, y - 1];
 
 				if (/*masksBuffer[x, y - 1] != maskColor &&*/
-                	Mathf.Abs(hsvColor.r - originalHSV.r) < hueTolerance &&
-                    Mathf.Abs(hsvColor.g - originalHSV.g) < saturationTolerance &&
-                    Mathf.Abs(hsvColor.b - originalHSV.b) < valueTolerance)
+					Mathf.Abs(hsvColor.r - originalColor.r) <= hueTolerance &&
+					Mathf.Abs(hsvColor.g - originalColor.g) <= saturationTolerance &&
+					Mathf.Abs(hsvColor.b - originalColor.b) <= valueTolerance)
                 {
                     copyBmp[x, y - 1] = maskColor;
 					masksBuffer[x, y - 1] = maskColor;
@@ -164,9 +165,9 @@ public class PaintTool : DrawingToolBase
 				Color hsvColor = copyBmp[x, y + 1];
 
 				if (/*masksBuffer[x, y + 1] != maskColor &&*/
-                	Mathf.Abs(hsvColor.r - originalHSV.r) < hueTolerance &&
-                    Mathf.Abs(hsvColor.g - originalHSV.g) < saturationTolerance &&
-                    Mathf.Abs(hsvColor.b - originalHSV.b) < valueTolerance)
+					Mathf.Abs(hsvColor.r - originalColor.r) <= hueTolerance &&
+					Mathf.Abs(hsvColor.g - originalColor.g) <= saturationTolerance &&
+					Mathf.Abs(hsvColor.b - originalColor.b) <= valueTolerance)
                 {
                     copyBmp[x, y + 1] = maskColor;
 					masksBuffer[x, y + 1] = maskColor;
