@@ -13,9 +13,9 @@ public class PaintTool : DrawingToolBase
 	#region DrawingToolBase overrides
 	override public void TouchDown(Vector2 screenPos)
     {
-    	FingerCanvas.Instance.SetupCanvas(); 
+     	FingerCanvas.Instance.SetupCanvas(); 
 		FingerCanvas.Instance.SaveUndo();
-    	FingerCanvas.Instance.SetVisible(true);
+     	FingerCanvas.Instance.SetVisible(true);
 		FingerCanvas.Instance.SetNormalBrush(); 
 		startCanvasPosition = FingerCanvas.Instance.GetCanvasPosition(screenPos);
 		FingerCanvas.Instance.SetBrushPosition(screenPos);

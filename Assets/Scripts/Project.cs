@@ -11,6 +11,7 @@ public class Project
     public string encodedMask;
 
     public Color[] colors;
+    public string[] colorNames;
 
     [System.NonSerialized]
     public Texture2D photo;
@@ -20,6 +21,8 @@ public class Project
     public Project()
     {
         name = "Tu proyecto Meridian";
+        colors = new Color[3];
+        colorNames = new string[3];
     }
 
     public void SetPhoto(Texture2D photo)
@@ -54,14 +57,29 @@ public class Project
         return null;
     }
 
-    public void SetColors(Color[] colors)
+    public void SetColors(ColorWidget[] colorWidgets)
     {
-    	this.colors = colors;
+        this.colors = new Color[3];
+        this.colorNames = new string[3];
+
+        for (int i = 0; i < 3; i++)
+        {
+            if (colorWidgets[i] != null)
+            {
+                this.colors[i] = colorWidgets[i].color;
+                this.colorNames[i] = colorWidgets[i].label.text;
+            }
+        }
     }
 
 	public Color[] GetColors()
     {
-    	return colors;
+        	return colors;
+    }
+
+    public string[] GetColorNames()
+    {
+        return colorNames;
     }
 
     static public string Texture2DToString(Texture2D texture)

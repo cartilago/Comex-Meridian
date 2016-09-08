@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.EventSystems;
-using System.Collections;
+
 
 public class ColorButton : MonoBehaviour  
 {
@@ -10,7 +9,8 @@ public class ColorButton : MonoBehaviour
 	public Text addColorLabel;
 	public GameObject selectColorButton;
 	public Image highlight;
-	public ColorWidget colorWidget;
+
+	private ColorWidget colorWidget;
 	#endregion
 
 	#region MonoBehaviour overrides
@@ -30,13 +30,22 @@ public class ColorButton : MonoBehaviour
 			DestroyImmediate(this.colorWidget.gameObject);
         }
 
-		// Add new color
-		this.colorWidget = colorWidget;
-		this.colorWidget.transform.SetParent(transform, false);
-		this.colorWidget.transform.localPosition = Vector3.zero;
-		this.colorWidget.transform.localScale = Vector3.one;
-		this.colorWidget.GetComponent<Graphic>().raycastTarget = false;
-		this.colorWidget.transform.SetAsFirstSibling();
+        this.colorWidget = colorWidget;
+
+        // Add new color
+        if (this.colorWidget != null)
+        {
+            this.colorWidget.transform.SetParent(transform, false);
+            this.colorWidget.transform.localPosition = Vector3.zero;
+            this.colorWidget.transform.localScale = Vector3.one;
+            this.colorWidget.GetComponent<Graphic>().raycastTarget = false;
+            this.colorWidget.transform.SetAsFirstSibling();
+        }
 	}
+
+    public ColorWidget GetColorWidget()
+    {
+        return colorWidget;
+    }
 	#endregion
 }

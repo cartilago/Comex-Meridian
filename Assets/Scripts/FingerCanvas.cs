@@ -31,7 +31,6 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
 			{
 				_renderTexture = new RenderTexture((int)canvasRenderer.transform.localScale.x, (int)canvasRenderer.transform.localScale.y, 0);
 				newTexture = true;
-
 			}
 			else
 			{
@@ -92,7 +91,6 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
 			RenderTexture.active = canvasCamera.targetTexture;
 			GL.Clear(false, true, Color.clear, 0);
 			newTexture = false;
-			SaveUndo();
 		}
 
 		canvasRenderer.material.mainTexture = canvasCamera.targetTexture;
@@ -110,9 +108,8 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
 			case 2: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color4", DecoratorPanel.Instance.photoRenderer.material.GetColor("_Color3")); break;
 		}
 
-		// Set canvas texture for photo shader, tint colors encoded as r,g,b
-		DecoratorPanel.Instance.photoRenderer.material.SetTexture("_TintMask", renderTexture);
-
+        // Set canvas texture for photo shader, tint colors encoded as r,g,b
+        DecoratorPanel.Instance.photoRenderer.material.SetTexture("_TintMask", renderTexture);
 	}
 
 	/// <summary>
@@ -184,6 +181,7 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
 	public void SaveUndo()
 	{
 		undoBuffer.Push(GetSnapshot().EncodeToPNG());
+        Debug.Log("undo stack size: " + undoBuffer.Count);
 	}
 
 	/// <summary>
@@ -195,9 +193,11 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
 		{
 			Texture2D saved = new Texture2D(2,2);
 			saved.LoadImage(undoBuffer.Pop());
-			SetContents(saved);
+            Graphics.Blit(saved, renderTexture);
 		}
-	}
+
+        Debug.Log("undo stack size: " + undoBuffer.Count);
+    }
 
 	private void ClearUndoStack()
 	{

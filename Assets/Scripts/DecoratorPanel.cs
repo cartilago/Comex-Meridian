@@ -1,10 +1,8 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
-using System.Collections;
-using Meridian.Framework.Utils;
 
-public class DecoratorPanel :  Panel
+public class DecoratorPanel : Panel
 {
     #region Class members
     public GameObject fileMenu;
@@ -25,28 +23,28 @@ public class DecoratorPanel :  Panel
     private bool mouseOrFingerDown;
 
     private DrawingToolBase currentTool;
-	private ColorBuffer HSVPixelBuffer;
+    private ColorBuffer HSVPixelBuffer;
     #endregion
 
     #region Class accessors
     static private DecoratorPanel _instance;
     static public DecoratorPanel Instance
     {
-    	get
-    	{
-    		if (_instance == null)
-    			_instance = FindObjectOfType<DecoratorPanel>();
+        get
+        {
+            if (_instance == null)
+                _instance = FindObjectOfType<DecoratorPanel>();
 
-    		return _instance;
-    	}
+            return _instance;
+        }
     }
     #endregion
 
     #region MonoBehaviour overrides
     private void Awake()
-   	{
-   		_instance = this;
-   	}
+    {
+        _instance = this;
+    }
 
     private void Start()
     {
@@ -117,17 +115,12 @@ public class DecoratorPanel :  Panel
         if (projectPhoto != null)
             SetPhoto(projectPhoto);
 
-		Texture2D projectMask = project.GetEncodedMask();
+        Texture2D projectMask = project.GetEncodedMask();
 
-		if (projectMask != null)
-			FingerCanvas.Instance.SetContents(projectMask);
+        if (projectMask != null)
+            FingerCanvas.Instance.SetContents(projectMask);
 
-		if (currentProject.colors != null)
-		{
-			photoRenderer.material.SetColor("_Color1", currentProject.colors[0]);
-			photoRenderer.material.SetColor("_Color2", currentProject.colors[1]);
-			photoRenderer.material.SetColor("_Color3", currentProject.colors[2]);
-		}
+        ColorsManager.Instance.SetColorsForButtons(currentProject.colors, currentProject.colorNames);
     }
 
     public Project GetCurrentProject()
@@ -222,7 +215,7 @@ public class DecoratorPanel :  Panel
 
 	public void Clear()
     {
-    	FingerCanvas.Instance.SaveUndo();
+        	FingerCanvas.Instance.SaveUndo();
         FingerCanvas.Instance.Clear();
     }
 
@@ -234,7 +227,7 @@ public class DecoratorPanel :  Panel
         fileMenu.SetActive(false);
 
         currentProject.SetEncodedPhoto(currentProject.GetPhoto(), FingerCanvas.Instance.GetSnapshot());
-		currentProject.SetColors(new Color[]{photoRenderer.material.GetColor("_Color1"), photoRenderer.material.GetColor("_Color2"), photoRenderer.material.GetColor("_Color3")});
+		currentProject.SetColors(ColorsManager.Instance.GetButtonColorWidgets());
 
         string serializedProject = JsonUtility.ToJson(currentProject);
         System.IO.File.WriteAllText(filename, serializedProject);
