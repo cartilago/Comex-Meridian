@@ -13,7 +13,7 @@ public class EraserTool : DrawingToolBase
 	#region DrawingToolBase overrides
 	override public void TouchDown(Vector2 screenPos)
     {
-		FingerCanvas.Instance.SetupCanvas();
+		//FingerCanvas.Instance.SetupCanvas();
         FingerCanvas.Instance.SaveUndo();
         FingerCanvas.Instance.SetVisible(true);
 		FingerCanvas.Instance.SetEraserBrush(); 
@@ -28,7 +28,8 @@ public class EraserTool : DrawingToolBase
 
 	override public void TouchUp(Vector2 pos)
     {
-		FingerCanvas.Instance.SetVisible(false);
+        FingerCanvas.Instance.SaveUndo();
+        FingerCanvas.Instance.SetVisible(false);
 	}
     #endregion
 }

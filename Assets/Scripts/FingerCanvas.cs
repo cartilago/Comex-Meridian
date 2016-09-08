@@ -15,6 +15,7 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
 
 	private bool newTexture;
 	private Stack<byte[]>undoBuffer = new Stack<byte[]>();
+    private byte[] currentUndo = null;
 	#endregion
 
 	#region Class accessors
@@ -82,6 +83,15 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
 	/// </summary>
 	public void SetupCanvas()
 	{
+        /*
+        if (renderTexture != null)
+        {
+            canvasCamera.targetTexture = null;
+            RenderTexture.active = null;
+            _renderTexture.Release();
+            Destroy(_renderTexture);
+        }*/
+
 		// Setup render tecture & camera
 		canvasCamera.targetTexture = renderTexture;
 		canvasCamera.gameObject.SetActive(true);
@@ -101,16 +111,31 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
 		brushSprite.transform.localScale = new Vector3(area, area * yFit, 1);
 		brushSprite.color = new Color(0,0,0,1); // Brush always draws on alpha so it can be cleared after each stroke
 
+        /*
 		switch (ColorsManager.Instance.GetCurrentColor())
 		{
 			case 0: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color4", DecoratorPanel.Instance.photoRenderer.material.GetColor("_Color1")); break;
 			case 1: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color4", DecoratorPanel.Instance.photoRenderer.material.GetColor("_Color2")); break;
 			case 2: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color4", DecoratorPanel.Instance.photoRenderer.material.GetColor("_Color3")); break;
-		}
+		}*/
 
         // Set canvas texture for photo shader, tint colors encoded as r,g,b
         DecoratorPanel.Instance.photoRenderer.material.SetTexture("_TintMask", renderTexture);
+
+        Debug.Log("Canvas set " + renderTexture.width + " x " + renderTexture.height);
 	}
+
+    public void UpdateBrushColor()
+    {
+        brushSprite.color = new Color(0, 0, 0, 1);
+
+        switch (ColorsManager.Instance.GetCurrentColor())
+        {
+            case 0: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color4", DecoratorPanel.Instance.photoRenderer.material.GetColor("_Color1")); break;
+            case 1: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color4", DecoratorPanel.Instance.photoRenderer.material.GetColor("_Color2")); break;
+            case 2: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color4", DecoratorPanel.Instance.photoRenderer.material.GetColor("_Color3")); break;
+        }
+    }
 
 	/// <summary>
 	/// Sets the brush position in canvas.
@@ -170,7 +195,7 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
 	/// <param name="contents">Contents.</param>
 	public void SetContents(Texture2D contents)
 	{
-		SetupCanvas();
+		//SetupCanvas();
 		Graphics.Blit(contents, renderTexture);
 		ClearUndoStack();
 	}
@@ -179,27 +204,48 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
 	/// Saves current canvas image to undo stack, image is encoded as PNG.
 	/// </summary>
 	public void SaveUndo()
-	{
-		undoBuffer.Push(GetSnapshot().EncodeToPNG());
-        Debug.Log("undo stack size: " + undoBuffer.Count);
+	{ 
+        if (currentUndo != null)
+        {
+            undoBuffer.Push(currentUndo);
+        }
+
+        currentUndo = GetSnapshot().EncodeToPNG();
+
+           // undoBuffer.Push(GetSnapshot().EncodeToPNG());
+        Debug.Log("undo stack size: " + undoBuffer.Count + " current is null " + (currentUndo == null));
 	}
 
-	/// <summary>
-	/// Restores a PNG encode image from the from undo stack.
-	/// </summary>
-	public void RestoreFromUndoStack()
-	{
-		if (undoBuffer.Count > 0)
-		{
-			Texture2D saved = new Texture2D(2,2);
-			saved.LoadImage(undoBuffer.Pop());
-            Graphics.Blit(saved, renderTexture);
-		}
+    /// <summary>
+    /// Restores a PNG encode image from the from undo stack.
+    /// </summary>
+    public void RestoreFromUndoStack()
+    {
 
-        Debug.Log("undo stack size: " + undoBuffer.Count);
+        if (undoBuffer.Count > 0)
+        {
+            Texture2D saved = new Texture2D(2, 2);
+            saved.LoadImage(undoBuffer.Pop());
+            Graphics.Blit(saved, renderTexture);
+        }
+
+        currentUndo = GetSnapshot().EncodeToPNG();
+
+
+        /*
+        if (currentUndo != null)
+        {
+            Texture2D saved = new Texture2D(2, 2);
+            saved.LoadImage(currentUndo);
+            Graphics.Blit(saved, renderTexture);
+        }*/
+
+        // currentUndo = undoBuffer.Pop();
+
+        Debug.Log("undo stack size: " + undoBuffer.Count + " current is null " + (currentUndo == null));
     }
 
-	private void ClearUndoStack()
+    private void ClearUndoStack()
 	{
 		undoBuffer.Clear();
 	}

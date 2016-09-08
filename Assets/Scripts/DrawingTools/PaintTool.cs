@@ -13,8 +13,10 @@ public class PaintTool : DrawingToolBase
 	#region DrawingToolBase overrides
 	override public void TouchDown(Vector2 screenPos)
     {
-     	FingerCanvas.Instance.SetupCanvas(); 
-		FingerCanvas.Instance.SaveUndo();
+        //FingerCanvas.Instance.SetupCanvas(); 
+        FingerCanvas.Instance.UpdateBrushColor();
+
+		//FingerCanvas.Instance.SaveUndo();
      	FingerCanvas.Instance.SetVisible(true);
 		FingerCanvas.Instance.SetNormalBrush(); 
 		startCanvasPosition = FingerCanvas.Instance.GetCanvasPosition(screenPos);
@@ -54,7 +56,9 @@ public class PaintTool : DrawingToolBase
 		masksTexture.Apply();
 		// Finally copy the modified masks texture back to the render texture
 		Graphics.Blit(masksTexture, renderTexture);
-	}
+
+        FingerCanvas.Instance.SaveUndo();
+    }
     #endregion
 
     #region Class implementation

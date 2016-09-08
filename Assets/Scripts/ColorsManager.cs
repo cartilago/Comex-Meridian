@@ -45,7 +45,7 @@ public class ColorsManager : MonoSingleton<ColorsManager>
 
         for (int i = 0; i < /*lines.Length*/ maxlines; i++)
         {
-            string[] rows = lines[i].Split(',');
+            string[] rows = lines[Random.Range(0,lines.Length-1)].Split(',');
 
             GameObject go = GameObject.Instantiate(prefab);
             go.transform.SetParent(t, false);    
@@ -99,6 +99,8 @@ public class ColorsManager : MonoSingleton<ColorsManager>
        	{
        		gameObject.SetActive(true);
        	}
+
+        FingerCanvas.Instance.UpdateBrushColor();
     }
 
 	public void ChangeColor(ColorButton colorButton)

@@ -120,6 +120,7 @@ public class DecoratorPanel : Panel
         if (projectMask != null)
             FingerCanvas.Instance.SetContents(projectMask);
 
+
         ColorsManager.Instance.SetColorsForButtons(currentProject.colors, currentProject.colorNames);
     }
 
@@ -144,7 +145,7 @@ public class DecoratorPanel : Panel
 
     public void SetPhoto(Texture2D photo)
     {
-		FingerCanvas.Instance.Clear();
+		//FingerCanvas.Instance.Clear();
 
 		HSVPixelBuffer = new ColorBuffer(photo.width, photo.height, Color32Utils.ConvertToHSV(photo.GetPixels()));
 
@@ -164,6 +165,9 @@ public class DecoratorPanel : Panel
 		canvasRenderer.transform.localScale = photoRenderer.transform.localScale = photoSize; 
 		canvasCamera.orthographicSize = photoCamera.orthographicSize = GetBaseOrthographicSize();
 		canvasCamera.aspect = photoCamera.aspect;
+
+        FingerCanvas.Instance.SetupCanvas();
+        FingerCanvas.Instance.SaveUndo();
     }
 
 	public ColorBuffer GetHSVPixelBuffer()
@@ -215,7 +219,7 @@ public class DecoratorPanel : Panel
 
 	public void Clear()
     {
-        	FingerCanvas.Instance.SaveUndo();
+        //	FingerCanvas.Instance.SaveUndo();
         FingerCanvas.Instance.Clear();
     }
 
