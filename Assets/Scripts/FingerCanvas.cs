@@ -16,6 +16,7 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
 	private bool newTexture;
 	private Stack<byte[]>undoBuffer = new Stack<byte[]>();
     private byte[] currentUndo = null;
+
 	#endregion
 
 	#region Class accessors
