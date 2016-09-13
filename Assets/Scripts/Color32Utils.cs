@@ -158,7 +158,7 @@ public static class Color32Utils
 	}
 }
 
-public class ColorBuffer
+public class ColorBuffer : Object
 {
 	public Color[] data;
 	public readonly int height;
@@ -184,7 +184,7 @@ public class ColorBuffer
 	}
 }
 
-public class ColorBuffer32
+public class ColorBuffer32 : Object
 {
     public Color32[] data;
     public readonly int height;

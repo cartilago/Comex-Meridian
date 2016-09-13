@@ -14,7 +14,7 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
 	public Material[] brushMaterials;
 
 	private bool newTexture;
-	private Stack<byte[]>undoBuffer = new Stack<byte[]>();
+	private List<byte[]>undoBuffer = new List<byte[]>();
     private byte[] currentUndo = null;
 
 	#endregion
@@ -84,15 +84,6 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
 	/// </summary>
 	public void SetupCanvas()
 	{
-        /*
-        if (renderTexture != null)
-        {
-            canvasCamera.targetTexture = null;
-            RenderTexture.active = null;
-            _renderTexture.Release();
-            Destroy(_renderTexture);
-        }*/
-
 		// Setup render tecture & camera
 		canvasCamera.targetTexture = renderTexture;
 		canvasCamera.gameObject.SetActive(true);
@@ -111,14 +102,6 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
 		float yFit = (canvasCamera.orthographicSize * 2) / canvasRenderer.transform.localScale.y;
 		brushSprite.transform.localScale = new Vector3(area, area * yFit, 1);
 		brushSprite.color = new Color(0,0,0,1); // Brush always draws on alpha so it can be cleared after each stroke
-
-        /*
-		switch (ColorsManager.Instance.GetCurrentColor())
-		{
-			case 0: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color4", DecoratorPanel.Instance.photoRenderer.material.GetColor("_Color1")); break;
-			case 1: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color4", DecoratorPanel.Instance.photoRenderer.material.GetColor("_Color2")); break;
-			case 2: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color4", DecoratorPanel.Instance.photoRenderer.material.GetColor("_Color3")); break;
-		}*/
 
         // Set canvas texture for photo shader, tint colors encoded as r,g,b
         DecoratorPanel.Instance.photoRenderer.material.SetTexture("_TintMask", renderTexture);
@@ -208,7 +191,10 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
 	{ 
         if (currentUndo != null)
         {
-            undoBuffer.Push(currentUndo);
+            undoBuffer.Add(currentUndo);
+
+            if (undoBuffer.Count > 4)
+            	undoBuffer.RemoveAt(0);
         }
 
         currentUndo = GetSnapshot().EncodeToPNG();
@@ -226,22 +212,12 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
         if (undoBuffer.Count > 0)
         {
             Texture2D saved = new Texture2D(2, 2);
-            saved.LoadImage(undoBuffer.Pop());
+            saved.LoadImage(undoBuffer[undoBuffer.Count-1]);
+            undoBuffer.RemoveAt(undoBuffer.Count-1);
             Graphics.Blit(saved, renderTexture);
         }
 
         currentUndo = GetSnapshot().EncodeToPNG();
-
-
-        /*
-        if (currentUndo != null)
-        {
-            Texture2D saved = new Texture2D(2, 2);
-            saved.LoadImage(currentUndo);
-            Graphics.Blit(saved, renderTexture);
-        }*/
-
-        // currentUndo = undoBuffer.Pop();
 
         Debug.Log("undo stack size: " + undoBuffer.Count + " current is null " + (currentUndo == null));
     }

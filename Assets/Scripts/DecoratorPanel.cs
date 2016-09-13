@@ -24,7 +24,6 @@ public class DecoratorPanel : Panel
 
     private DrawingToolBase currentTool;
     private ColorBuffer HSVPixelBuffer;
-    private ColorBuffer32 RGBPixelBuffer;
     #endregion
 
     #region Class accessors
@@ -103,6 +102,11 @@ public class DecoratorPanel : Panel
             currentTool.TouchUp(Input.mousePosition);
         }
     }
+
+    private void Reset()
+    {
+    	PaintTool.ReleaseMemory();
+    }
     #endregion
 
     #region Class implementation
@@ -149,7 +153,6 @@ public class DecoratorPanel : Panel
     	Debug.Log (string.Format("Photo set with size: {0}x{1}", photo.width, photo.height));
 
 		HSVPixelBuffer = new ColorBuffer(photo.width, photo.height, Color32Utils.ConvertToHSV(photo.GetPixels()));
-        RGBPixelBuffer = new ColorBuffer32(photo.width, photo.height, photo.GetPixels32());
 
         // Convert photo to internal HSV representation, shader will convert it back to RGB.
         Texture2D hsvTexture = new Texture2D(photo.width, photo.height);
@@ -172,16 +175,13 @@ public class DecoratorPanel : Panel
 
         FingerCanvas.Instance.SetupCanvas();
         FingerCanvas.Instance.SaveUndo();
+
+		Reset();
     }
 
 	public ColorBuffer GetHSVPixelBuffer()
     {
 		return HSVPixelBuffer;
-    }
-
-    public ColorBuffer32 GetRGBPixelBuffer()
-    {
-        return RGBPixelBuffer;
     }
 
     public void Hide()
