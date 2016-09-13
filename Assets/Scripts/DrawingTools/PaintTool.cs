@@ -49,11 +49,9 @@ public class PaintTool : DrawingToolBase
        
         // Do a floof fill only when the stroke is really short, (Tapping)
         if (GetStrokeRadius(strokePoints) < 10)
-        //FloodFill(hsvPixelBuffer, masksPixelBuffer, startCanvasPosition, maskColors[ColorsManager.Instance.GetCurrentColor()], 0.1f, 0.1f, 0.025f);
             FloodFill(startCanvasPosition, maskColors[ColorsManager.Instance.GetCurrentColor()], 0.2f, 0.35f, 0.025f, rgbPixelBuffer, hsvPixelBuffer, masksPixelBuffer);
-        // else
-          //  FloodFillOnAlpha(hsvPixelBuffer, masksPixelBuffer, startCanvasPosition, maskColors[ColorsManager.Instance.GetCurrentColor()], 0.2f, 0.35f, 0.025f);
-        //AddAlpha(masksPixelBuffer, ColorsManager.Instance.GetCurrentColor());
+        else
+			Stroke(masksPixelBuffer, ColorsManager.Instance.GetCurrentColor());
 
         // Clear finger painting on mask's alpha channel
         for (int a = 0; a < masksPixelBuffer.data.Length; a++)
@@ -97,7 +95,7 @@ public class PaintTool : DrawingToolBase
     	return Mathf.Max(size.x, size.y);
     }
 
-	private void AddAlpha(ColorBuffer masksBuffer, int currentColor)
+	private void Stroke(ColorBuffer masksBuffer, int currentColor)
     {
     	    switch (currentColor)
     	    {
@@ -117,28 +115,29 @@ public class PaintTool : DrawingToolBase
 
     private void ProcessPixel(int x, int y, ref Color currentHSV, ref Color32 currentRGB, Color32 startRGB, Color startHSV, Color maskColor, float hueTolerance, float saturationTolerance, float valueTolerance, Queue<Point>openNodes, ColorBuffer32 RGBBuffer, ColorBuffer HSVBuffer, ColorBuffer masksBuffer, ColorBuffer copyBmp)
     {
-        Color32 rgbColor = RGBBuffer[x, y];
+
+        // Color32 rgbColor = RGBBuffer[x, y];
         Color hsvColor = copyBmp[x , y];
-        Color origColor = HSVBuffer[x, y];
+        // Color origColor = HSVBuffer[x, y];
         Color prevHSVDifference = new Color(Mathf.Abs(hsvColor.r - currentHSV.r), Mathf.Abs(hsvColor.g - currentHSV.g), Mathf.Abs(hsvColor.b - currentHSV.b));
-        Color startColDifference = new Color(Mathf.Abs(origColor.r - startHSV.r), Mathf.Abs(origColor.g - startHSV.g), Mathf.Abs(origColor.b - startHSV.b));
-        Color32 prevRGBDifference = new Color32((byte)Mathf.Abs(rgbColor.r - currentRGB.r), (byte)Mathf.Abs(rgbColor.g - currentRGB.g), (byte)Mathf.Abs(rgbColor.b - currentRGB.b), 0);
-        Color32 rgbDifference = new Color32((byte)Mathf.Abs(rgbColor.r - startRGB.r), (byte)Mathf.Abs(rgbColor.g - startRGB.g), (byte)Mathf.Abs(rgbColor.b - startRGB.b), 0);
+        // Color startColDifference = new Color(Mathf.Abs(origColor.r - startHSV.r), Mathf.Abs(origColor.g - startHSV.g), Mathf.Abs(origColor.b - startHSV.b));
+        // Color32 prevRGBDifference = new Color32((byte)Mathf.Abs(rgbColor.r - currentRGB.r), (byte)Mathf.Abs(rgbColor.g - currentRGB.g), (byte)Mathf.Abs(rgbColor.b - currentRGB.b), 0);
+        // Color32 rgbDifference = new Color32((byte)Mathf.Abs(rgbColor.r - startRGB.r), (byte)Mathf.Abs(rgbColor.g - startRGB.g), (byte)Mathf.Abs(rgbColor.b - startRGB.b), 0);
 
         //hueTolerance = .5f;
-        saturationTolerance = 0.3f; // Important;
-        valueTolerance = 0.5f;
-        byte rgbTolerance = 64;
+        //saturationTolerance = 0.3f; // Important;
+        valueTolerance = .015f;
+        //byte rgbTolerance = 64;
 
-        if (masksBuffer[x, y].r != 0 || masksBuffer[x, y].g != 0 || masksBuffer[x, y].b != 0)
-            return;
+        //if (masksBuffer[x, y].r != 0 || masksBuffer[x, y].g != 0 || masksBuffer[x, y].b != 0)
+        //    return;
 
-        if (/*prevHSVDifference.r <= hueTolerance && */prevHSVDifference.g <= saturationTolerance && prevHSVDifference.b <= valueTolerance
+        if (prevHSVDifference.r <= hueTolerance && prevHSVDifference.g <= saturationTolerance && prevHSVDifference.b <= valueTolerance)
             //prevRGBDifference.r <= rgbTolerance && prevRGBDifference.g <= rgbTolerance && prevRGBDifference.b <= rgbTolerance &&
             //startColDifference.b <.25f &&
             /*&& 
             startColDifference.g < 0.5f /*&& */
-             && rgbDifference.r < rgbTolerance && rgbDifference.g < rgbTolerance && rgbDifference.b < rgbTolerance) // RGB Threshold
+            // && rgbDifference.r < rgbTolerance && rgbDifference.g < rgbTolerance && rgbDifference.b < rgbTolerance) // RGB Threshold
             
             {
             
@@ -149,14 +148,13 @@ public class PaintTool : DrawingToolBase
             else
                 // Adaptiveness limit for low saturated colors
                 currentHSV.g = Mathf.Clamp(hsvColor.g, 0, startHSV.g + 0.01f);*/
-
-            //currentHSV.g = hsvColor.g;
+               
             // Luminance adapting
             currentHSV.b = hsvColor.b;
 
-            copyBmp[x, y] = Color.black; // maskColor;
-            masksBuffer[x, y] = maskColor;
-            openNodes.Enqueue(new Point(x, y, currentRGB, currentHSV));
+         	copyBmp[x, y] = Color.black;
+           	masksBuffer[x, y] = maskColor;
+           	openNodes.Enqueue(new Point(x, y, currentRGB, currentHSV));
         }
     }
 

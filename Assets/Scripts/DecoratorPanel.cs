@@ -146,6 +146,8 @@ public class DecoratorPanel : Panel
 
     public void SetPhoto(Texture2D photo)
     {
+    	Debug.Log (string.Format("Photo set with size: {0}x{1}", photo.width, photo.height));
+
 		HSVPixelBuffer = new ColorBuffer(photo.width, photo.height, Color32Utils.ConvertToHSV(photo.GetPixels()));
         RGBPixelBuffer = new ColorBuffer32(photo.width, photo.height, photo.GetPixels32());
 
@@ -155,6 +157,8 @@ public class DecoratorPanel : Panel
 		hsvTexture.filterMode = FilterMode.Point;
 		hsvTexture.Apply();
 		photoRenderer.material.SetTexture("_MainTex", hsvTexture);
+
+		Debug.Log (string.Format("HSV buffer size: {0}x{1}", hsvTexture.width, hsvTexture.height));
 
 		currentProject.SetPhoto(photo);
 	

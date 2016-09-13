@@ -145,7 +145,7 @@ public class CameraPanel : Panel
         }
 
         // Set WebCam resolution, ensure to get a texture at least the double size of a screen
-        webCamTexture = new WebCamTexture(backCamName, Screen.width, Screen.height, 60);
+        webCamTexture = new WebCamTexture(backCamName, 10000, 10000);//, Screen.width, Screen.height, 60);
         webCamTexture.Play();
        
 		while ( webCamTexture.width < 100 )
