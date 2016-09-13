@@ -81,6 +81,7 @@ Shader "Custom/Unlit-HSV-Tinted"
 				fixed4 hsv = tex2D(_MainTex, i.uv_MainTex);
 
 				fixed4 mask = tex2D(_TintMask, i.uv_TintMask);
+
 				mask += tex2D(_TintMask, half2(i.uv_TintMask.x + _Distance, i.uv_TintMask.y + _Distance));
 				mask += tex2D(_TintMask, half2(i.uv_TintMask.x + _Distance, i.uv_TintMask.y));
 				mask += tex2D(_TintMask, half2(i.uv_TintMask.x, i.uv_TintMask.y + _Distance));
@@ -90,9 +91,7 @@ Shader "Custom/Unlit-HSV-Tinted"
 				mask += tex2D(_TintMask, half2(i.uv_TintMask.x - _Distance, i.uv_TintMask.y));
 				mask += tex2D(_TintMask, half2(i.uv_TintMask.x, i.uv_TintMask.y - _Distance));
 				mask = mask / 9;
-
-
-
+			
 
 				fixed3 photoRGB = hsv2rgb(hsv.rgb);
 
