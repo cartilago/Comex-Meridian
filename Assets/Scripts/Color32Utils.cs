@@ -183,3 +183,29 @@ public class ColorBuffer
 		}
 	}
 }
+
+public class ColorBuffer32
+{
+    public Color32[] data;
+    public readonly int height;
+    public readonly int width;
+
+    public ColorBuffer32(int width, int height, Color32[] colorData)
+    {
+        this.width = width;
+        this.height = height;
+        this.data = colorData;
+    }
+
+    public Color this[int x, int y]
+    {
+        get
+        {
+            return data[(y * width) + x];
+        }
+        set
+        {
+            data[(y * width) + x] = value;
+        }
+    }
+}

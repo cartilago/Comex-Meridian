@@ -10,7 +10,6 @@ public class PaintTool : DrawingToolBase
 
 	static private Color[] maskColors = new Color[]{Color.red, Color.green, Color.blue};
 	private List<Vector2> strokePoints = new List<Vector2>();  
-	//ConvolutionFilterBase blurFilter = new Gaussian5x5BlurFilter();
 	#endregion
 
 	#region DrawingToolBase overrides
@@ -36,6 +35,7 @@ public class PaintTool : DrawingToolBase
 
 		// Get the photo hsv pixel buffer
 		ColorBuffer hsvPixelBuffer = DecoratorPanel.Instance.GetHSVPixelBuffer();
+        ColorBuffer32 rgbPixelBuffer = DecoratorPanel.Instance.GetRGBPixelBuffer();
 
 		// Grab render texture pixels
 		RenderTexture renderTexture = FingerCanvas.Instance.renderTexture;
@@ -46,25 +46,26 @@ public class PaintTool : DrawingToolBase
 		masksTexture.Apply();
 		ColorBuffer masksPixelBuffer = new ColorBuffer(masksTexture.width, masksTexture.height, masksTexture.GetPixels());
 
-		// Do a floof fill only when the stroke is really short, (Tapping)
-		if (GetStrokeRadius(strokePoints) < 10)
-			FloodFill(hsvPixelBuffer, masksPixelBuffer, startCanvasPosition, maskColors[ColorsManager.Instance.GetCurrentColor()], 0.1f, 0.5f, 0.5f);
-		else
-			FloodFillOnAlpha(hsvPixelBuffer, masksPixelBuffer, startCanvasPosition, maskColors[ColorsManager.Instance.GetCurrentColor()], 0.1f, 0.5f, 0.5f);
-			//AddAlpha(masksPixelBuffer, ColorsManager.Instance.GetCurrentColor());
+       
+        // Do a floof fill only when the stroke is really short, (Tapping)
+        if (GetStrokeRadius(strokePoints) < 10)
+        //FloodFill(hsvPixelBuffer, masksPixelBuffer, startCanvasPosition, maskColors[ColorsManager.Instance.GetCurrentColor()], 0.1f, 0.1f, 0.025f);
+            FloodFill(startCanvasPosition, maskColors[ColorsManager.Instance.GetCurrentColor()], 0.2f, 0.35f, 0.025f, rgbPixelBuffer, hsvPixelBuffer, masksPixelBuffer);
+         else
+            FloodFillOnAlpha(hsvPixelBuffer, masksPixelBuffer, startCanvasPosition, maskColors[ColorsManager.Instance.GetCurrentColor()], 0.2f, 0.35f, 0.025f);
+        //AddAlpha(masksPixelBuffer, ColorsManager.Instance.GetCurrentColor());
 
-		// Clear finger painting on mask's alpha channel
-		for (int a = 0; a < masksPixelBuffer.data.Length; a++)
-			masksPixelBuffer.data[a].a = 0;
+        // Clear finger painting on mask's alpha channel
+        for (int a = 0; a < masksPixelBuffer.data.Length; a++)
+            masksPixelBuffer.data[a].a = 0;
 
-		// Now set the modified pixels back to the masks texture
-		masksTexture.SetPixels(masksPixelBuffer.data);
-		masksTexture.Apply();
+        // Now set the modified pixels back to the masks texture
+        masksTexture.SetPixels(masksPixelBuffer.data);
 
-		//blurFilter.Apply(masksTexture);
+        masksTexture.Apply();
 
-		// Finally copy the modified masks texture back to the render texture
-		Graphics.Blit(masksTexture, renderTexture);
+        // Finally copy the modified masks texture back to the render texture
+        Graphics.Blit(masksTexture, renderTexture);
 
         FingerCanvas.Instance.SaveUndo();
 
@@ -98,65 +99,110 @@ public class PaintTool : DrawingToolBase
 
 	private void AddAlpha(ColorBuffer masksBuffer, int currentColor)
     {
-    	switch (currentColor)
-    	{
-		case 0: for (int i = 0; i < masksBuffer.data.Length; i++)
-			masksBuffer.data[i].r = Mathf.Clamp01(masksBuffer.data[i].r + masksBuffer.data[i].a);
-			break;
+    	    switch (currentColor)
+    	    {
+		    case 0: for (int i = 0; i < masksBuffer.data.Length; i++)
+			    masksBuffer.data[i].r = Mathf.Clamp01(masksBuffer.data[i].r + masksBuffer.data[i].a);
+			    break;
 
-		case 1: for (int i = 0; i < masksBuffer.data.Length; i++)
-			masksBuffer.data[i].g = Mathf.Clamp01(masksBuffer.data[i].g + masksBuffer.data[i].a);
-			break;
+		    case 1: for (int i = 0; i < masksBuffer.data.Length; i++)
+			    masksBuffer.data[i].g = Mathf.Clamp01(masksBuffer.data[i].g + masksBuffer.data[i].a);
+			    break;
 
-		case 2: for (int i = 0; i < masksBuffer.data.Length; i++)
-			masksBuffer.data[i].b = Mathf.Clamp01(masksBuffer.data[i].b + masksBuffer.data[i].a);
-			break;
-    	}
+		    case 2: for (int i = 0; i < masksBuffer.data.Length; i++)
+			    masksBuffer.data[i].b = Mathf.Clamp01(masksBuffer.data[i].b + masksBuffer.data[i].a);
+			    break;
+    	    }
     }
 
-	private void FloodFillOnAlpha(ColorBuffer HSVBuffer, ColorBuffer masksBuffer, Vector2 startPos, Color maskColor, float hueTolerance, float saturationTolerance, float valueTolerance)
+    private void ProcessPixel(int x, int y, ref Color color, Color startColor, Color maskColor, float hueTolerance, float saturationTolerance, float valueTolerance, Queue<Point>openNodes, ColorBuffer32 RGBBuffer, ColorBuffer HSVBuffer, ColorBuffer masksBuffer, ColorBuffer copyBmp)
     {
-        Point start = new Point((int)startPos.x, (int)startPos.y);
+        Color32 rgbColor = RGBBuffer[x, y];
+        Color hsvColor = copyBmp[x , y];
+        Color origColor = HSVBuffer[x, y];
+        Color startColDifference = new Color(Mathf.Abs(origColor.r - startColor.r), Mathf.Abs(origColor.g - startColor.g), Mathf.Abs(origColor.b - startColor.b));
+
+        if (Mathf.Abs(hsvColor.r - color.r) <= hueTolerance &&
+            Mathf.Abs(hsvColor.g - color.g) <= saturationTolerance &&
+            Mathf.Abs(hsvColor.b - color.b) <= valueTolerance &&
+            startColDifference.g < 0.5f)
+        {
+            copyBmp[x, y] = Color.black; // maskColor;
+            masksBuffer[x, y] = maskColor;
+            openNodes.Enqueue(new Point(x, y, color));
+
+            // Adaptiveness limit for highly saturated colors 
+            if (startColor.g > 0.5f)
+                color.g = Mathf.Clamp(hsvColor.g, startColor.g - 0.001f, 1);
+            else
+                // Adaptiveness limit for low saturated colors
+                color.g = Mathf.Clamp(hsvColor.g, 0, startColor.g + 0.001f);
+
+            color.b = hsvColor.b;
+        }
+    }
+
+
+	private void FloodFill(Vector2 startPos, Color maskColor, float hueTolerance, float saturationTolerance, float valueTolerance, ColorBuffer32 RGBBuffer, ColorBuffer HSVBuffer, ColorBuffer masksBuffer)
+    {
+        Color startColor = HSVBuffer[(int)startPos.x, (int)startPos.y];
+        Point start = new Point((int)startPos.x, (int)startPos.y, startColor);
 
         ColorBuffer copyBmp = new ColorBuffer(HSVBuffer.width, HSVBuffer.height, (Color[])HSVBuffer.data.Clone());
-
-        Color originalColor = HSVBuffer[start.X, start.Y]; 
-
-        Debug.Log (originalColor);
 
 		int width =  HSVBuffer.width; 
         int height = HSVBuffer.height; 
 
-        Debug.Log ("Original color: " + originalColor);
-
-        // Deal with highly saturated colors
-		if (originalColor.g > 0.7f)
-		{
-			hueTolerance = 0.1f;
-			saturationTolerance = 0.1f;
-        	valueTolerance = 1;
-			Debug.Log("Saturated color");
-		}
-
-		// Deal with whites
-		if (originalColor.g < 0.05f /*&& originalColor.b > 0.8f*/)
-		{
-			hueTolerance = 1;
-			saturationTolerance = 0.05f;
-			valueTolerance = 0.05f;
-			Debug.Log("White color");
-		} 
-
-
-        copyBmp[start.X, start.Y] = maskColor;
+        copyBmp[start.x, start.y] = maskColor;
 
         Queue<Point> openNodes = new Queue<Point>();
         openNodes.Enqueue(start);
 
         int i = 0;
+        int emergency = width * height;
 
-        // TODO: remove this
-        // emergency switch so it doesn't hang if something goes wrong
+        while (openNodes.Count > 0)
+        {
+            i++;
+
+            if (i > emergency)
+                return;
+
+            Point current = openNodes.Dequeue();
+            int x = current.x;
+            int y = current.y;
+            Color color = current.color;
+           
+            if (x > 0)
+                ProcessPixel(x - 1, y, ref color, startColor, maskColor, hueTolerance, saturationTolerance, valueTolerance, openNodes, RGBBuffer, HSVBuffer, masksBuffer, copyBmp);
+              
+            if (x < width - 1)
+                ProcessPixel(x + 1, y, ref color, startColor, maskColor, hueTolerance, saturationTolerance, valueTolerance, openNodes, RGBBuffer, HSVBuffer, masksBuffer, copyBmp);
+          
+            if (y > 0)
+                ProcessPixel(x, y - 1, ref color, startColor, maskColor, hueTolerance, saturationTolerance, valueTolerance, openNodes, RGBBuffer, HSVBuffer, masksBuffer, copyBmp);
+              
+            if (y < height - 1) 
+                ProcessPixel(x, y + 1, ref color, startColor, maskColor, hueTolerance, saturationTolerance, valueTolerance, openNodes, RGBBuffer, HSVBuffer, masksBuffer, copyBmp);
+        }
+    }
+
+    private void FloodFillOnAlpha(ColorBuffer HSVBuffer, ColorBuffer masksBuffer, Vector2 startPos, Color maskColor, float hueTolerance, float saturationTolerance, float valueTolerance)
+    {
+        Color startColor = HSVBuffer[(int)startPos.x, (int)startPos.y];
+        Point start = new Point((int)startPos.x, (int)startPos.y, startColor);
+
+        ColorBuffer copyBmp = new ColorBuffer(HSVBuffer.width, HSVBuffer.height, (Color[])HSVBuffer.data.Clone());
+
+        int width = HSVBuffer.width;
+        int height = HSVBuffer.height;
+
+        copyBmp[start.x, start.y] = maskColor;
+
+        Queue<Point> openNodes = new Queue<Point>();
+        openNodes.Enqueue(start);
+
+        int i = 0;
         int emergency = width * height;
 
         while (openNodes.Count > 0)
@@ -169,258 +215,139 @@ public class PaintTool : DrawingToolBase
             }
 
             Point current = openNodes.Dequeue();
-            int x = current.X;
-            int y = current.Y;
-           
+            int x = current.x;
+            int y = current.y;
+            Color color = current.color;
+
             if (x > 0)
             {
-				Color hsvColor = copyBmp[x - 1, y];
+                Color hsvColor = copyBmp[x - 1, y];
 
-                if (masksBuffer[x - 1, y].a != 0 &&
-					Mathf.Abs(hsvColor.r - originalColor.r) <= hueTolerance && 
-					Mathf.Abs(hsvColor.g - originalColor.g) <= saturationTolerance && 
-					Mathf.Abs(hsvColor.b - originalColor.b) <= valueTolerance)
+                Color origColor = HSVBuffer[x - 1, y];
+                Color startColDifference = new Color(Mathf.Abs(origColor.r - startColor.r), Mathf.Abs(origColor.g - startColor.g), Mathf.Abs(origColor.b - startColor.b));
+
+                if (masksBuffer[x-1, y].a != 0 &&
+                    Mathf.Abs(hsvColor.r - color.r) <= hueTolerance &&
+                    Mathf.Abs(hsvColor.g - color.g) <= saturationTolerance &&
+                    Mathf.Abs(hsvColor.b - color.b) <= valueTolerance &&
+                    startColDifference.g < 0.5f)
                 {
-                    copyBmp[x - 1, y] = maskColor;
-					masksBuffer[x -1, y] = maskColor;
-                    openNodes.Enqueue(new Point(x - 1, y));
+                    copyBmp[x - 1, y] = Color.black; // maskColor;
+                    masksBuffer[x - 1, y] = maskColor;
+                    openNodes.Enqueue(new Point(x - 1, y, color));
+
+                    // Adaptiveness limit for highly saturated colors 
+                    if (startColor.g > 0.5f)
+                        color.g = Mathf.Clamp(hsvColor.g, startColor.g - 0.001f, 1);
+                    else
+                        // Adaptiveness limit for low saturated colors
+                        color.g = Mathf.Clamp(hsvColor.g, 0, startColor.g + 0.001f);
+
+                    color.b = hsvColor.b;
                 }
             }
             if (x < width - 1)
             {
-				Color hsvColor = copyBmp[x + 1, y];
+                Color hsvColor = copyBmp[x + 1, y];
 
-				if (masksBuffer[x + 1, y].a != 0 &&
-					Mathf.Abs(hsvColor.r - originalColor.r) <= hueTolerance &&
-					Mathf.Abs(hsvColor.g - originalColor.g) <= saturationTolerance &&
-					Mathf.Abs(hsvColor.b - originalColor.b) <= valueTolerance)
+                Color origColor = HSVBuffer[x + 1, y];
+                Color startColDifference = new Color(Mathf.Abs(origColor.r - startColor.r), Mathf.Abs(origColor.g - startColor.g), Mathf.Abs(origColor.b - startColor.b));
+
+                if (masksBuffer[x + 1, y].a != 0 &&
+                    Mathf.Abs(hsvColor.r - color.r) <= hueTolerance &&
+                    Mathf.Abs(hsvColor.g - color.g) <= saturationTolerance &&
+                    Mathf.Abs(hsvColor.b - color.b) <= valueTolerance &&
+                    startColDifference.g < 0.5f)
                 {
-                    copyBmp[x + 1, y] = maskColor;
-					masksBuffer[x + 1, y] = maskColor;
-                    openNodes.Enqueue(new Point(x + 1, y));
+                    copyBmp[x + 1, y] = Color.black; // maskColor;
+                    masksBuffer[x + 1, y] = maskColor;
+                    openNodes.Enqueue(new Point(x + 1, y, color));
+
+                    // Adaptiveness limit for highly saturated colors 
+                    if (startColor.g > 0.5f)
+                        color.g = Mathf.Clamp(hsvColor.g, startColor.g - 0.001f, 1);
+                    else
+                        // Adaptiveness limit for low saturated colors
+                        color.g = Mathf.Clamp(hsvColor.g, 0, startColor.g + 0.001f);
+
+                    color.b = hsvColor.b;
                 }
             }
             if (y > 0)
             {
-				Color hsvColor = copyBmp[x, y - 1];
+                Color hsvColor = copyBmp[x, y - 1];
 
-				if (masksBuffer[x, y - 1].a != 0 &&
-					Mathf.Abs(hsvColor.r - originalColor.r) <= hueTolerance &&
-					Mathf.Abs(hsvColor.g - originalColor.g) <= saturationTolerance &&
-					Mathf.Abs(hsvColor.b - originalColor.b) <= valueTolerance)
+                Color origColor = HSVBuffer[x, y - 1];
+                Color startColDifference = new Color(Mathf.Abs(origColor.r - startColor.r), Mathf.Abs(origColor.g - startColor.g), Mathf.Abs(origColor.b - startColor.b));
+
+                if (masksBuffer[x, y - 1].a != 0 &&
+                    Mathf.Abs(hsvColor.r - color.r) <= hueTolerance &&
+                    Mathf.Abs(hsvColor.g - color.g) <= saturationTolerance &&
+                    Mathf.Abs(hsvColor.b - color.b) <= valueTolerance &&
+                    startColDifference.g < 0.5f)
                 {
-                    copyBmp[x, y - 1] = maskColor;
-					masksBuffer[x, y - 1] = maskColor;
-                    openNodes.Enqueue(new Point(x, y - 1));
+                    copyBmp[x, y - 1] = Color.black; // maskColor;
+                    masksBuffer[x, y - 1] = maskColor;
+                    openNodes.Enqueue(new Point(x, y - 1, color));
+
+                    // Adaptiveness limit for highly saturated colors 
+                    if (startColor.g > 0.5f)
+                        color.g = Mathf.Clamp(hsvColor.g, startColor.g - 0.001f, 1);
+                    else
+                        // Adaptiveness limit for low saturated colors
+                        color.g = Mathf.Clamp(hsvColor.g, 0, startColor.g + 0.001f);
+
+                    color.b = hsvColor.b;
                 }
             }
-            if (y < height - 1) 
+            if (y < height - 1)
             {
-				Color hsvColor = copyBmp[x, y + 1];
+                Color hsvColor = copyBmp[x, y + 1];
 
-				if (masksBuffer[x, y + 1].a != 0 &&
-					Mathf.Abs(hsvColor.r - originalColor.r) <= hueTolerance &&
-					Mathf.Abs(hsvColor.g - originalColor.g) <= saturationTolerance &&
-					Mathf.Abs(hsvColor.b - originalColor.b) <= valueTolerance)
+                Color origColor = HSVBuffer[x, y + 1];
+                Color startColDifference = new Color(Mathf.Abs(origColor.r - startColor.r), Mathf.Abs(origColor.g - startColor.g), Mathf.Abs(origColor.b - startColor.b));
+
+                if (masksBuffer[x, y + 1].a != 0 &&
+                    Mathf.Abs(hsvColor.r - color.r) <= hueTolerance &&
+                    Mathf.Abs(hsvColor.g - color.g) <= saturationTolerance &&
+                    Mathf.Abs(hsvColor.b - color.b) <= valueTolerance &&
+                    startColDifference.g < 0.5f)
                 {
-                    copyBmp[x, y + 1] = maskColor;
-					masksBuffer[x, y + 1] = maskColor;
-                    openNodes.Enqueue(new Point(x, y + 1));
+                    copyBmp[x, y + 1] = Color.black; // maskColor;
+                    masksBuffer[x, y + 1] = maskColor;
+                    openNodes.Enqueue(new Point(x, y + 1, color));
+
+                    // Adaptiveness limit for highly saturated colors 
+                    if (startColor.g > 0.5f)
+                        color.g = Mathf.Clamp(hsvColor.g, startColor.g - 0.001f, 1);
+                    else
+                        // Adaptiveness limit for low saturated colors
+                        color.g = Mathf.Clamp(hsvColor.g, 0, startColor.g + 0.001f);
+
+                    color.b = hsvColor.b;
                 }
             }
         }
     }
 
-	private void FloodFill(ColorBuffer HSVBuffer, ColorBuffer masksBuffer, Vector2 startPos, Color maskColor, float hueTolerance, float saturationTolerance, float valueTolerance)
+    private struct Point
     {
-        Point start = new Point((int)startPos.x, (int)startPos.y);
-
-        ColorBuffer copyBmp = new ColorBuffer(HSVBuffer.width, HSVBuffer.height, (Color[])HSVBuffer.data.Clone());
-
-        Color originalColor = HSVBuffer[start.X, start.Y]; 
-
-        Debug.Log (originalColor);
-
-		int width =  HSVBuffer.width; 
-        int height = HSVBuffer.height; 
-
-        /*
-		if (originalColor == maskColor)
-        {
-            return;
-        }*/
-
-        Debug.Log ("Original color: " + originalColor);
-
-        // Deal with highly saturated colors
-		if (originalColor.g > 0.7f)
-		{
-			hueTolerance = 0.1f;
-			saturationTolerance = 0.1f;
-        	valueTolerance = 1;
-			Debug.Log("Saturated color");
-		}
-
-		// Deal with whites
-		if (originalColor.g < 0.05f /*&& originalColor.b > 0.8f*/)
-		{
-			hueTolerance = 1;
-			saturationTolerance = 0.05f;
-			valueTolerance = 0.1f;
-			Debug.Log("White color");
-		} 
-
-
-        copyBmp[start.X, start.Y] = maskColor;
-
-        Queue<Point> openNodes = new Queue<Point>();
-        openNodes.Enqueue(start);
-
-        int i = 0;
-
-        // TODO: remove this
-        // emergency switch so it doesn't hang if something goes wrong
-        int emergency = width * height;
-
-        while (openNodes.Count > 0)
-        {
-            i++;
-
-            if (i > emergency)
-            {
-                return;
-            }
-
-            Point current = openNodes.Dequeue();
-            int x = current.X;
-            int y = current.Y;
-           
-            if (x > 0)
-            {
-				Color hsvColor = copyBmp[x - 1, y];
-
-                if (/*masksBuffer[x - 1, y] != maskColor &&*/
-					Mathf.Abs(hsvColor.r - originalColor.r) <= hueTolerance && 
-					Mathf.Abs(hsvColor.g - originalColor.g) <= saturationTolerance && 
-					Mathf.Abs(hsvColor.b - originalColor.b) <= valueTolerance)
-                {
-                    copyBmp[x - 1, y] = maskColor;
-					masksBuffer[x -1, y] = maskColor;
-                    openNodes.Enqueue(new Point(x - 1, y));
-                }
-            }
-            if (x < width - 1)
-            {
-				Color hsvColor = copyBmp[x + 1, y];
-
-				if (/*masksBuffer[x + 1, y] != maskColor &&*/
-					Mathf.Abs(hsvColor.r - originalColor.r) <= hueTolerance &&
-					Mathf.Abs(hsvColor.g - originalColor.g) <= saturationTolerance &&
-					Mathf.Abs(hsvColor.b - originalColor.b) <= valueTolerance)
-                {
-                    copyBmp[x + 1, y] = maskColor;
-					masksBuffer[x + 1, y] = maskColor;
-                    openNodes.Enqueue(new Point(x + 1, y));
-                }
-            }
-            if (y > 0)
-            {
-				Color hsvColor = copyBmp[x, y - 1];
-
-				if (/*masksBuffer[x, y - 1] != maskColor &&*/
-					Mathf.Abs(hsvColor.r - originalColor.r) <= hueTolerance &&
-					Mathf.Abs(hsvColor.g - originalColor.g) <= saturationTolerance &&
-					Mathf.Abs(hsvColor.b - originalColor.b) <= valueTolerance)
-                {
-                    copyBmp[x, y - 1] = maskColor;
-					masksBuffer[x, y - 1] = maskColor;
-                    openNodes.Enqueue(new Point(x, y - 1));
-                }
-            }
-            if (y < height - 1) 
-            {
-				Color hsvColor = copyBmp[x, y + 1];
-
-				if (/*masksBuffer[x, y + 1] != maskColor &&*/
-					Mathf.Abs(hsvColor.r - originalColor.r) <= hueTolerance &&
-					Mathf.Abs(hsvColor.g - originalColor.g) <= saturationTolerance &&
-					Mathf.Abs(hsvColor.b - originalColor.b) <= valueTolerance)
-                {
-                    copyBmp[x, y + 1] = maskColor;
-					masksBuffer[x, y + 1] = maskColor;
-                    openNodes.Enqueue(new Point(x, y + 1));
-                }
-            }
-        }
-    }
-
-   
-    /*
-    unsafe void LinearFloodFill4( byte* scan0, int x, int y,Size bmpsize, int stride, byte* startcolor)
-		{
-			
-			//offset the pointer to the point passed in
-			int* p=(int*) (scan0+(CoordsToIndex(x,y, stride)));
-			
-			
-			//FIND LEFT EDGE OF COLOR AREA
-			int LFillLoc=x; //the location to check/fill on the left
-			int* ptr=p; //the pointer to the current location
-			while(true)
-			{
-				ptr[0]=m_fillcolor; 	 //fill with the color
-				PixelsChecked[LFillLoc,y]=true;
-				LFillLoc--; 		 	 //de-increment counter
-				ptr-=1;				 	 //de-increment pointer
-				if(LFillLoc<=0 || !CheckPixel((byte*)ptr,startcolor) ||  (PixelsChecked[LFillLoc,y]))
-					break;			 	 //exit loop if we're at edge of bitmap or color area
-				
-			}
-			LFillLoc++;
-			
-			//FIND RIGHT EDGE OF COLOR AREA
-			int RFillLoc=x; //the location to check/fill on the left
-			ptr=p;
-			while(true)
-			{
-				ptr[0]=m_fillcolor; //fill with the color
-				PixelsChecked[RFillLoc,y]=true;
-				RFillLoc++; 		 //increment counter
-				ptr+=1;				 //increment pointer
-				if(RFillLoc>=bmpsize.Width || !CheckPixel((byte*)ptr,startcolor) ||  (PixelsChecked[RFillLoc,y]))
-					break;			 //exit loop if we're at edge of bitmap or color area
-				
-			}
-			RFillLoc--;
-			
-			
-			//START THE LOOP UPWARDS AND DOWNWARDS			
-			ptr=(int*)(scan0+CoordsToIndex(LFillLoc,y,stride));
-			for(int i=LFillLoc;i<=RFillLoc;i++)
-			{
-				//START LOOP UPWARDS
-				//if we're not above the top of the bitmap and the pixel above this one is within the color tolerance
-				if(y>0 && CheckPixel((byte*)(scan0+CoordsToIndex(i,y-1,stride)),startcolor) && (!(PixelsChecked[i,y-1])))
-					LinearFloodFill4(scan0, i,y-1,bmpsize,stride,startcolor);
-				//START LOOP DOWNWARDS
-				if(y<(bmpsize.Height-1) && CheckPixel((byte*)(scan0+CoordsToIndex(i,y+1,stride)),startcolor) && (!(PixelsChecked[i,y+1])))
-					LinearFloodFill4(scan0, i,y+1,bmpsize,stride,startcolor);
-				ptr+=1;
-			}
-			
-		}
-    */
-   
-
-	private struct Point
-    {
-        public int X;
-        public int Y;
+        public int x;
+        public int y;
+        public Color color;
 
         public Point(int x, int y)
         {
-            this.X = x;
-            this.Y = y;
+            this.x = x;
+            this.y = y;
+            this.color = Color.clear;
+        }
+
+        public Point(int x, int y, Color color)
+        {
+            this.x = x;
+            this.y = y;
+            this.color = color;
         }
     }
     #endregion

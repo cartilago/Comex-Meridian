@@ -11,7 +11,7 @@ public class Menu : MonoBehaviour
 	#region MonoBehaviour overrides
 	private void Start()
 	{
-		ShowPanel(0);
+		ShowPanel(2);
 	}
 	#endregion
 

@@ -72,6 +72,8 @@ public abstract class ConvolutionFilterBase
 				green = Factor * green + Bias;
 				red = Factor * red + Bias;
 				alpha = Factor * alpha + Bias;
+
+
 				
 				/*		
 				resultBuffer[byteOffset] = new Color (red, green, blue, 1);

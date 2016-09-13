@@ -9,6 +9,8 @@ Shader "Custom/Unlit-HSV-Tinted"
 		_Color2("Color 2", Color) = (1.0, 1.0, 1.0, 1.0)
 		_Color3("Color 3", Color) = (1.0, 1.0, 1.0, 1.0)
 		_Color4("Color 4", Color) = (1.0, 1.0, 1.0, 1.0)
+		
+		_Distance("Distance", Float) = 0.015
 	}
 
 	SubShader
@@ -32,6 +34,8 @@ Shader "Custom/Unlit-HSV-Tinted"
 			fixed4 	  _Color2;
 			fixed4 	  _Color3;
 			fixed4 	  _Color4;
+
+			float _Distance;
 
 			struct v2f
 			{
@@ -75,7 +79,20 @@ Shader "Custom/Unlit-HSV-Tinted"
 			fixed4 frag(v2f i) :COLOR
 			{
 				fixed4 hsv = tex2D(_MainTex, i.uv_MainTex);
+
 				fixed4 mask = tex2D(_TintMask, i.uv_TintMask);
+				mask += tex2D(_TintMask, half2(i.uv_TintMask.x + _Distance, i.uv_TintMask.y + _Distance));
+				mask += tex2D(_TintMask, half2(i.uv_TintMask.x + _Distance, i.uv_TintMask.y));
+				mask += tex2D(_TintMask, half2(i.uv_TintMask.x, i.uv_TintMask.y + _Distance));
+				mask += tex2D(_TintMask, half2(i.uv_TintMask.x - _Distance, i.uv_TintMask.y - _Distance));
+				mask += tex2D(_TintMask, half2(i.uv_TintMask.x + _Distance, i.uv_TintMask.y - _Distance));
+				mask += tex2D(_TintMask, half2(i.uv_TintMask.x - _Distance, i.uv_TintMask.y + _Distance));
+				mask += tex2D(_TintMask, half2(i.uv_TintMask.x - _Distance, i.uv_TintMask.y));
+				mask += tex2D(_TintMask, half2(i.uv_TintMask.x, i.uv_TintMask.y - _Distance));
+				mask = mask / 9;
+
+
+
 
 				fixed3 photoRGB = hsv2rgb(hsv.rgb);
 
@@ -90,37 +107,6 @@ Shader "Custom/Unlit-HSV-Tinted"
 				fixed3 result = lerp(result1, result2, mask.g);
 				result = lerp(result , result3, mask.b);
 				result = lerp(result, result4, mask.a);
-
-				/*
-				//fixed3 result1 = lerp(base, hsv2rgb(shift.rgb), mask.r); // Highly saturated color pass
-				//result1 = lerp(result1, hsv2rgb(hsv.rgb) * hsv2rgb(_Color1.rgb), 1 - hsv.g);
-
-				// Apply color 2, use mask stored in mask's G channel
-				shift.r = _Color2.r; // hue
-				shift.g = lerp(hsv.g, _Color2.g, hsv.g ); // saturation
-				shift.b = lerp(hsv.b, _Color2.b, hsv.b ); // value
-
-				fixed3 result2 = lerp(base, hsv2rgb(shift.rgb), mask.g);
-
-				// Apply color 3, use mask stored in mask's B channel
-				shift.r = _Color3.r; // hue
-				shift.g = lerp(hsv.g, _Color3.g, hsv.g ); // saturation
-				shift.b = lerp(hsv.b, _Color3.b, hsv.b ); // value
-
-				fixed3 result3 = lerp(base, hsv2rgb(shift.rgb), mask.b);
-
-				// Apply color 4, use mask stored in mask's Alpha channel
-				shift.r = _Color4.r; // hue
-				shift.g = lerp(hsv.g, _Color4.g, hsv.g ); // saturation
-				shift.b = lerp(hsv.b, _Color4.b, hsv.b ); // value
-
-				fixed3 result4 = lerp(base, hsv2rgb(shift.rgb), mask.a);
-
-				// Combine all 4 results
-				fixed3 result = lerp(result1, result2, mask.g);
-				result = lerp(result, result3, mask.b);
-				result = lerp(result, result4, mask.a);*/
-			
 	
 				return fixed4(result, 1);
 			}
