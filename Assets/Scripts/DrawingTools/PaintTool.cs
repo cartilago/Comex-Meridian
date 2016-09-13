@@ -51,8 +51,8 @@ public class PaintTool : DrawingToolBase
         if (GetStrokeRadius(strokePoints) < 10)
         //FloodFill(hsvPixelBuffer, masksPixelBuffer, startCanvasPosition, maskColors[ColorsManager.Instance.GetCurrentColor()], 0.1f, 0.1f, 0.025f);
             FloodFill(startCanvasPosition, maskColors[ColorsManager.Instance.GetCurrentColor()], 0.2f, 0.35f, 0.025f, rgbPixelBuffer, hsvPixelBuffer, masksPixelBuffer);
-         else
-            FloodFillOnAlpha(hsvPixelBuffer, masksPixelBuffer, startCanvasPosition, maskColors[ColorsManager.Instance.GetCurrentColor()], 0.2f, 0.35f, 0.025f);
+        // else
+          //  FloodFillOnAlpha(hsvPixelBuffer, masksPixelBuffer, startCanvasPosition, maskColors[ColorsManager.Instance.GetCurrentColor()], 0.2f, 0.35f, 0.025f);
         //AddAlpha(masksPixelBuffer, ColorsManager.Instance.GetCurrentColor());
 
         // Clear finger painting on mask's alpha channel
@@ -115,43 +115,90 @@ public class PaintTool : DrawingToolBase
     	    }
     }
 
-    private void ProcessPixel(int x, int y, ref Color color, Color startColor, Color maskColor, float hueTolerance, float saturationTolerance, float valueTolerance, Queue<Point>openNodes, ColorBuffer32 RGBBuffer, ColorBuffer HSVBuffer, ColorBuffer masksBuffer, ColorBuffer copyBmp)
+    private void ProcessPixel(int x, int y, ref Color currentHSV, ref Color32 currentRGB, Color32 startRGB, Color startHSV, Color maskColor, float hueTolerance, float saturationTolerance, float valueTolerance, Queue<Point>openNodes, ColorBuffer32 RGBBuffer, ColorBuffer HSVBuffer, ColorBuffer masksBuffer, ColorBuffer copyBmp)
     {
         Color32 rgbColor = RGBBuffer[x, y];
         Color hsvColor = copyBmp[x , y];
         Color origColor = HSVBuffer[x, y];
-        Color startColDifference = new Color(Mathf.Abs(origColor.r - startColor.r), Mathf.Abs(origColor.g - startColor.g), Mathf.Abs(origColor.b - startColor.b));
+        Color prevHSVDifference = new Color(Mathf.Abs(hsvColor.r - currentHSV.r), Mathf.Abs(hsvColor.g - currentHSV.g), Mathf.Abs(hsvColor.b - currentHSV.b));
+        Color startColDifference = new Color(Mathf.Abs(origColor.r - startHSV.r), Mathf.Abs(origColor.g - startHSV.g), Mathf.Abs(origColor.b - startHSV.b));
+        Color32 prevRGBDifference = new Color32((byte)Mathf.Abs(rgbColor.r - currentRGB.r), (byte)Mathf.Abs(rgbColor.g - currentRGB.g), (byte)Mathf.Abs(rgbColor.b - currentRGB.b), 0);
+        Color32 rgbDifference = new Color32((byte)Mathf.Abs(rgbColor.r - startRGB.r), (byte)Mathf.Abs(rgbColor.g - startRGB.g), (byte)Mathf.Abs(rgbColor.b - startRGB.b), 0);
 
-        if (Mathf.Abs(hsvColor.r - color.r) <= hueTolerance &&
-            Mathf.Abs(hsvColor.g - color.g) <= saturationTolerance &&
-            Mathf.Abs(hsvColor.b - color.b) <= valueTolerance &&
-            startColDifference.g < 0.5f)
+        //hueTolerance = .5f;
+        saturationTolerance = 0.3f; // Important;
+        valueTolerance = 0.5f;
+        byte rgbTolerance = 64;
+
+        if (masksBuffer[x, y].r != 0 || masksBuffer[x, y].g != 0 || masksBuffer[x, y].b != 0)
+            return;
+
+        if (/*prevHSVDifference.r <= hueTolerance && */prevHSVDifference.g <= saturationTolerance && prevHSVDifference.b <= valueTolerance
+            //prevRGBDifference.r <= rgbTolerance && prevRGBDifference.g <= rgbTolerance && prevRGBDifference.b <= rgbTolerance &&
+            //startColDifference.b <.25f &&
+            /*&& 
+            startColDifference.g < 0.5f /*&& */
+             && rgbDifference.r < rgbTolerance && rgbDifference.g < rgbTolerance && rgbDifference.b < rgbTolerance) // RGB Threshold
+            
+            {
+            
+        /*
+            // Adaptiveness limit for highly saturated colors 
+            if (startHSV.g > 0.5f)
+                currentHSV.g = Mathf.Clamp(hsvColor.g, startHSV.g - 0.01f, 1);
+            else
+                // Adaptiveness limit for low saturated colors
+                currentHSV.g = Mathf.Clamp(hsvColor.g, 0, startHSV.g + 0.01f);*/
+
+            //currentHSV.g = hsvColor.g;
+            // Luminance adapting
+            currentHSV.b = hsvColor.b;
+
+            copyBmp[x, y] = Color.black; // maskColor;
+            masksBuffer[x, y] = maskColor;
+            openNodes.Enqueue(new Point(x, y, currentRGB, currentHSV));
+        }
+    }
+
+  
+    private void ProcessPixel2(int x, int y, ref Color currentHSV, ref Color32 currentRGB, Color32 startRGB, Color startHSV, Color maskColor, float hueTolerance, float saturationTolerance, float valueTolerance, Queue<Point>openNodes, ColorBuffer32 RGBBuffer, ColorBuffer HSVBuffer, ColorBuffer masksBuffer, ColorBuffer copyBmp)
+    {
+        Color32 rgbColor = RGBBuffer[x, y];
+        Color hsvColor = copyBmp[x , y];
+        Color origColor = HSVBuffer[x, y];
+        Color startColDifference = new Color(Mathf.Abs(origColor.r - startHSV.r), Mathf.Abs(origColor.g - startHSV.g), Mathf.Abs(origColor.b - startHSV.b));
+        Color32 rgbDifference = new Color32((byte)Mathf.Abs(rgbColor.r - startRGB.r), (byte)Mathf.Abs(rgbColor.g - startRGB.g), (byte)Mathf.Abs(rgbColor.b - startRGB.b), 0);
+
+        if (Mathf.Abs(hsvColor.r - currentHSV.r) <= hueTolerance &&
+            Mathf.Abs(hsvColor.g - currentHSV.g) <= saturationTolerance &&
+            Mathf.Abs(hsvColor.b - currentHSV.b) <= valueTolerance &&
+            startColDifference.g < 0.5f )
         {
             copyBmp[x, y] = Color.black; // maskColor;
             masksBuffer[x, y] = maskColor;
-            openNodes.Enqueue(new Point(x, y, color));
+            openNodes.Enqueue(new Point(x, y, currentHSV, currentRGB));
 
+            /*
             // Adaptiveness limit for highly saturated colors 
-            if (startColor.g > 0.5f)
-                color.g = Mathf.Clamp(hsvColor.g, startColor.g - 0.001f, 1);
+            if (startHSV.g > 0.5f)
+                currentHSV.g = Mathf.Clamp(hsvColor.g, startHSV.g - 0.001f, 1);
             else
                 // Adaptiveness limit for low saturated colors
-                color.g = Mathf.Clamp(hsvColor.g, 0, startColor.g + 0.001f);
+                currentHSV.g = Mathf.Clamp(hsvColor.g, 0, startHSV.g + 0.001f);*/
 
-            color.b = hsvColor.b;
+            currentHSV.b = hsvColor.b;
         }
     }
+    
 
 
 	private void FloodFill(Vector2 startPos, Color maskColor, float hueTolerance, float saturationTolerance, float valueTolerance, ColorBuffer32 RGBBuffer, ColorBuffer HSVBuffer, ColorBuffer masksBuffer)
     {
-        Color startColor = HSVBuffer[(int)startPos.x, (int)startPos.y];
-        Point start = new Point((int)startPos.x, (int)startPos.y, startColor);
+        Color32 startRGB = RGBBuffer[(int)startPos.x, (int)startPos.y];
+        Color startHSV = HSVBuffer[(int)startPos.x, (int)startPos.y];
+        Point start = new Point((int)startPos.x, (int)startPos.y, startRGB, startHSV);
 
         ColorBuffer copyBmp = new ColorBuffer(HSVBuffer.width, HSVBuffer.height, (Color[])HSVBuffer.data.Clone());
-
-		int width =  HSVBuffer.width; 
-        int height = HSVBuffer.height; 
 
         copyBmp[start.x, start.y] = maskColor;
 
@@ -159,7 +206,7 @@ public class PaintTool : DrawingToolBase
         openNodes.Enqueue(start);
 
         int i = 0;
-        int emergency = width * height;
+        int emergency = HSVBuffer.width * HSVBuffer.height;
 
         while (openNodes.Count > 0)
         {
@@ -171,22 +218,24 @@ public class PaintTool : DrawingToolBase
             Point current = openNodes.Dequeue();
             int x = current.x;
             int y = current.y;
-            Color color = current.color;
+            Color currentHSV = current.color;
+            Color32 currentRGB = current.rgb;
            
             if (x > 0)
-                ProcessPixel(x - 1, y, ref color, startColor, maskColor, hueTolerance, saturationTolerance, valueTolerance, openNodes, RGBBuffer, HSVBuffer, masksBuffer, copyBmp);
+                ProcessPixel(x - 1, y, ref currentHSV, ref currentRGB, startRGB, startHSV, maskColor, hueTolerance, saturationTolerance, valueTolerance, openNodes, RGBBuffer, HSVBuffer, masksBuffer, copyBmp);
               
-            if (x < width - 1)
-                ProcessPixel(x + 1, y, ref color, startColor, maskColor, hueTolerance, saturationTolerance, valueTolerance, openNodes, RGBBuffer, HSVBuffer, masksBuffer, copyBmp);
+            if (x < HSVBuffer.width - 1)
+                ProcessPixel(x + 1, y, ref currentHSV, ref currentRGB, startRGB, startHSV, maskColor, hueTolerance, saturationTolerance, valueTolerance, openNodes, RGBBuffer, HSVBuffer, masksBuffer, copyBmp);
           
             if (y > 0)
-                ProcessPixel(x, y - 1, ref color, startColor, maskColor, hueTolerance, saturationTolerance, valueTolerance, openNodes, RGBBuffer, HSVBuffer, masksBuffer, copyBmp);
+                ProcessPixel(x, y - 1, ref currentHSV, ref currentRGB, startRGB, startHSV, maskColor, hueTolerance, saturationTolerance, valueTolerance, openNodes, RGBBuffer, HSVBuffer, masksBuffer, copyBmp);
               
-            if (y < height - 1) 
-                ProcessPixel(x, y + 1, ref color, startColor, maskColor, hueTolerance, saturationTolerance, valueTolerance, openNodes, RGBBuffer, HSVBuffer, masksBuffer, copyBmp);
+            if (y < HSVBuffer.height - 1) 
+                ProcessPixel(x, y + 1, ref currentHSV, ref currentRGB, startRGB, startHSV, maskColor, hueTolerance, saturationTolerance, valueTolerance, openNodes, RGBBuffer, HSVBuffer, masksBuffer, copyBmp);
         }
     }
 
+    /*
     private void FloodFillOnAlpha(ColorBuffer HSVBuffer, ColorBuffer masksBuffer, Vector2 startPos, Color maskColor, float hueTolerance, float saturationTolerance, float valueTolerance)
     {
         Color startColor = HSVBuffer[(int)startPos.x, (int)startPos.y];
@@ -328,26 +377,29 @@ public class PaintTool : DrawingToolBase
                 }
             }
         }
-    }
+    }*/
 
     private struct Point
     {
         public int x;
         public int y;
         public Color color;
+        public Color32 rgb;
 
         public Point(int x, int y)
         {
             this.x = x;
             this.y = y;
             this.color = Color.clear;
+            this.rgb = new Color32(0,0,0,0);
         }
 
-        public Point(int x, int y, Color color)
+        public Point(int x, int y, Color32 rgb, Color color)
         {
             this.x = x;
             this.y = y;
             this.color = color;
+            this.rgb = rgb;
         }
     }
     #endregion
