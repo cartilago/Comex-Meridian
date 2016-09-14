@@ -10,6 +10,9 @@ public class PaintTool : DrawingToolBase
 
 	static private Color[] maskColors = new Color[]{Color.red, Color.green, Color.blue};
 	private List<Vector2> strokePoints = new List<Vector2>();  
+	static private Texture2D masksTexture;
+	static private ColorBuffer32 masksPixelBuffer;
+
 	#endregion
 
 	#region DrawingToolBase overrides
@@ -38,15 +41,21 @@ public class PaintTool : DrawingToolBase
 
 		// Grab render texture pixels
 		RenderTexture renderTexture = FingerCanvas.Instance.renderTexture;
-
 		RenderTexture.active = renderTexture;
-		Texture2D masksTexture = new Texture2D(renderTexture.width, renderTexture.height, TextureFormat.ARGB32, false);
+
+		if (masksTexture == null)
+			masksTexture = new Texture2D(renderTexture.width, renderTexture.height, TextureFormat.ARGB32, false);
+
 		masksTexture.ReadPixels(new Rect(0, 0, renderTexture.width, renderTexture.height), 0, 0);
 		masksTexture.Apply();
-		ColorBuffer32 masksPixelBuffer = new ColorBuffer32(masksTexture.width, masksTexture.height, masksTexture.GetPixels32());
+
+		if (masksPixelBuffer == null)
+			masksPixelBuffer = new ColorBuffer32(masksTexture.width, masksTexture.height, masksTexture.GetPixels32());
+		else
+			masksPixelBuffer.data = masksTexture.GetPixels32();
 
        
-        // Do a floof fill only when the stroke is really short, (Tapping)
+        // Do a flood fill only when the stroke is really short, (Tapping)
         if (GetStrokeRadius(strokePoints) < 10)
             FloodFill(startCanvasPosition, maskColors[ColorsManager.Instance.GetCurrentColor()], 0.2f, 0.35f, 0.025f, hsvPixelBuffer, masksPixelBuffer);
         else
@@ -58,22 +67,22 @@ public class PaintTool : DrawingToolBase
 
         // Now set the modified pixels back to the masks texture
         masksTexture.SetPixels32(masksPixelBuffer.data);
-
         masksTexture.Apply();
 
         // Finally copy the modified masks texture back to the render texture
         Graphics.Blit(masksTexture, renderTexture);
-
+ 
         FingerCanvas.Instance.SaveUndo();
 
-
-        strokePoints.Clear();
+		strokePoints.Clear();
     }
     #endregion
 
     #region Class implementation
     static public void ReleaseMemory()
     {
+    	Destroy(masksTexture);
+    	Destroy(masksPixelBuffer);
     }
 
     private float GetStrokeRadius(List<Vector2> points)

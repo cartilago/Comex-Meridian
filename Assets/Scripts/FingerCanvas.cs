@@ -193,11 +193,14 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
         {
             undoBuffer.Add(currentUndo);
 
-            if (undoBuffer.Count > 4)
+            if (undoBuffer.Count > 3)
+            {
             	undoBuffer.RemoveAt(0);
+            	Debug.Log("Removed undo buffer");
+            }
         }
 
-        currentUndo = GetSnapshot().EncodeToPNG();
+        currentUndo = GetSnapshot().EncodeToJPG(10);
 
            // undoBuffer.Push(GetSnapshot().EncodeToPNG());
         Debug.Log("undo stack size: " + undoBuffer.Count + " current is null " + (currentUndo == null));
@@ -217,7 +220,7 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
             Graphics.Blit(saved, renderTexture);
         }
 
-        currentUndo = GetSnapshot().EncodeToPNG();
+		currentUndo = GetSnapshot().EncodeToJPG(10);
 
         Debug.Log("undo stack size: " + undoBuffer.Count + " current is null " + (currentUndo == null));
     }
