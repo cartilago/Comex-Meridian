@@ -1,0 +1,22 @@
+
+
+Q: How do i get started as quickly as possible ? 
+
+A: Have a look at the included demo as well as the readme file.
+
+
+Q: I'm getting errors when I try and import an image, nothing is showing up. 
+
+A: First, try the demo, does the demo work by itself ? Then go back and have a look at your project and compare with the dmeo scene, what is diffirent ?
+
+
+Q: I'm testing on iOS and the Album doesn't show all the photos.
+
+A: Try and select the NativeGallery prefab and set the variable "iOS Image Picker Type" to "UI Image Picker Source Type: Saved Photos Album". This brings out additional images saved.
+
+
+Q: I got an idea for a feature will you help us do it ? 
+
+A: Contact support if you want to request any additional features.
+
+

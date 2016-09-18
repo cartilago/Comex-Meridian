@@ -4,14 +4,13 @@ using System.Runtime.InteropServices;
 
 public class NativeShare : MonoBehaviour
 {
-	public string ScreenshotName = "screenshot.png";
+	//public string ScreenshotName = "Meridian.png";
 
-    public void ShareScreenshotWithText(string text)
+    public void ShareScreenshotWithText(string screenShotPath, string text)
     {
-        string screenShotPath = Application.persistentDataPath + "/" + ScreenshotName;
-        Application.CaptureScreenshot(ScreenshotName);
-
-        Share(text,screenShotPath,"");
+        //string screenShotPath = Application.persistentDataPath + "/" + ScreenshotName;
+        //Application.CaptureScreenshot(ScreenshotName);
+        Share(text, screenShotPath,"");
     }
 
 	public void Share(string shareText, string imagePath, string url, string subject = "")

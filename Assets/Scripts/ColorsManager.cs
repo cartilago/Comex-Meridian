@@ -31,6 +31,9 @@ public class ColorsManager : MonoSingleton<ColorsManager>
         CreateGetColorWidgets(topColorRoot, colorWidgetPrefab);
         CreateCombinationWidgets(combinationsRoot, combinationWidgetPrefab);
 
+       //ColorWidget random = colorButtons[Random.Range(0, colorButtons.Count)].GetComponentInChildren<ColorWidget>(true);
+       // SetColorForButton(0, random.color, random.name);
+       SetColorForButton(0, new Color(.55f, .6f, .55f), "MK5-13\nOzono");
         gameObject.SetActive(false);
     }
     #endregion

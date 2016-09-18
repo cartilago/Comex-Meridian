@@ -7,6 +7,7 @@ public class FileManager : MonoBehaviour
     #region Class members
     public FileBrowser fileBrowser;
     public ConfirmDialog confirmDialog;
+    public string nativeShareText;
     #endregion
 
     #region Class implementation
@@ -37,9 +38,11 @@ public class FileManager : MonoBehaviour
         fileBrowser.gameObject.SetActive(true);
     }
 
-	public void ShareProject()
+	public void NativeShareScreenshot()
     {
-        Debug.Log("ShareProject");
+        string screenShotPath = Application.persistentDataPath + "/" + "Meridian.jpg";
+        DecoratorPanel.Instance.SaveScreenShot(screenShotPath);
+        GetComponent<NativeShare>().ShareScreenshotWithText(screenShotPath, nativeShareText);
     }
 
     public void AcceptedFileOverwriteDelegate(string filename)

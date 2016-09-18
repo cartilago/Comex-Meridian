@@ -131,12 +131,15 @@ public class PaintTool : DrawingToolBase
         Color hsvColor = copyBmp[x , y];
         Color prevHSVDifference = new Color(Mathf.Abs(hsvColor.r - currentHSV.r), Mathf.Abs(hsvColor.g - currentHSV.g), Mathf.Abs(hsvColor.b - currentHSV.b));
 
-        valueTolerance = .015f;
+        valueTolerance = 1f;
+        saturationTolerance = 0.095f;
+        hueTolerance = .1f;
+
 
         if (prevHSVDifference.r <= hueTolerance && prevHSVDifference.g <= saturationTolerance && prevHSVDifference.b <= valueTolerance)
         {
             // Luminance adapting
-            currentHSV.b = hsvColor.b;
+           // currentHSV.b = hsvColor.b;
 
          	copyBmp[x, y] = Color.black;
            	masksBuffer[x, y] = maskColor;

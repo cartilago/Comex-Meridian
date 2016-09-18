@@ -192,18 +192,11 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
         if (currentUndo != null)
         {
             undoBuffer.Add(currentUndo);
-
-            if (undoBuffer.Count > 3)
-            {
-            	undoBuffer.RemoveAt(0);
-            	Debug.Log("Removed undo buffer");
-            }
         }
 
-        currentUndo = GetSnapshot().EncodeToJPG(10);
+        currentUndo = GetSnapshot().EncodeToPNG();
 
-           // undoBuffer.Push(GetSnapshot().EncodeToPNG());
-        Debug.Log("undo stack size: " + undoBuffer.Count + " current is null " + (currentUndo == null));
+        Debug.Log("Undo saved, stack size: " + undoBuffer.Count + " current is null " + (currentUndo == null));
 	}
 
     /// <summary>
@@ -211,23 +204,26 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
     /// </summary>
     public void RestoreFromUndoStack()
     {
-
         if (undoBuffer.Count > 0)
         {
+            RenderTexture.active = renderTexture;
             Texture2D saved = new Texture2D(2, 2);
             saved.LoadImage(undoBuffer[undoBuffer.Count-1]);
             undoBuffer.RemoveAt(undoBuffer.Count-1);
             Graphics.Blit(saved, renderTexture);
+            
         }
 
-		currentUndo = GetSnapshot().EncodeToJPG(10);
+        currentUndo = GetSnapshot().EncodeToPNG();
 
-        Debug.Log("undo stack size: " + undoBuffer.Count + " current is null " + (currentUndo == null));
+        Debug.Log("Undo restored, stack size: " + undoBuffer.Count + " current is null " + (currentUndo == null));
     }
 
-    private void ClearUndoStack()
+    public void ClearUndoStack()
 	{
+        currentUndo = null;
 		undoBuffer.Clear();
+        Debug.Log("Undo Stack Cleared");
 	}
 	#endregion
 	 

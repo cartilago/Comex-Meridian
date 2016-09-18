@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using Tastybits.NativeGallery;
+using System.IO;
 
 public class DecoratorPanel : Panel
 {
@@ -8,6 +10,7 @@ public class DecoratorPanel : Panel
     public GameObject fileMenu;
     public GameObject topSection;
     public GameObject bottomSection;
+    public NewImagePanel newImagePanel;
     public InputField projectNameInputField;
     public Renderer photoRenderer;
     public Renderer canvasRenderer;
@@ -105,7 +108,9 @@ public class DecoratorPanel : Panel
 
     private void Reset()
     {
-    	PaintTool.ReleaseMemory();
+        FingerCanvas.Instance.ClearUndoStack();
+        FingerCanvas.Instance.Clear();
+        	PaintTool.ReleaseMemory();
     }
     #endregion
 
@@ -150,7 +155,9 @@ public class DecoratorPanel : Panel
 
     public void SetPhoto(Texture2D photo)
     {
-    	Debug.Log (string.Format("Photo set with size: {0}x{1}", photo.width, photo.height));
+        Reset();
+
+        Debug.Log (string.Format("Photo set with size: {0}x{1}", photo.width, photo.height));
 
 		HSVPixelBuffer = new ColorBuffer(photo.width, photo.height, Color32Utils.ConvertToHSV(photo.GetPixels()));
 
@@ -176,10 +183,55 @@ public class DecoratorPanel : Panel
         FingerCanvas.Instance.SetupCanvas();
         FingerCanvas.Instance.SaveUndo();
 
-		Reset();
+		
+        // We should wait for the UI to complete layout setup or will get wrong coordinates
+        Invoke("ResetCameraPosition", .01f);
     }
 
-	public ColorBuffer GetHSVPixelBuffer()
+    public void ResetCameraPosition()
+    {
+        Vector3[] topSectionCorners = new Vector3[4];
+        Vector3[] bottomSectionCorners = new Vector3[4];
+
+        topSection.GetComponent<RectTransform>().GetWorldCorners(topSectionCorners);
+        bottomSection.GetComponent<RectTransform>().GetWorldCorners(bottomSectionCorners);
+
+        Canvas canvas = FindObjectOfType<Canvas>();
+        Rect topSectionScreenRect = GetScreenRect(topSection.GetComponent<RectTransform>(), canvas);
+        Rect bottomSectionScreenRect = GetScreenRect(bottomSection.GetComponent<RectTransform>(), canvas);
+        Debug.Log(topSectionScreenRect);
+
+        Vector2 p = photoCamera.ScreenToWorldPoint(new Vector3(Screen.width / 2, (topSectionScreenRect.yMax + bottomSectionScreenRect.yMin) / 2, 0));
+       photoRenderer.transform.position = new Vector3(0, -p.y, 0);
+    }
+
+    public static Rect GetScreenRect(RectTransform rectTransform, Canvas canvas)
+    {
+
+        Vector3[] corners = new Vector3[4];
+        Vector3[] screenCorners = new Vector3[2];
+
+        rectTransform.GetWorldCorners(corners);
+
+        if (canvas.renderMode == RenderMode.ScreenSpaceCamera || canvas.renderMode == RenderMode.WorldSpace)
+        {
+            screenCorners[0] = RectTransformUtility.WorldToScreenPoint(canvas.worldCamera, corners[1]);
+            screenCorners[1] = RectTransformUtility.WorldToScreenPoint(canvas.worldCamera, corners[3]);
+        }
+        else
+        {
+            screenCorners[0] = RectTransformUtility.WorldToScreenPoint(null, corners[1]);
+            screenCorners[1] = RectTransformUtility.WorldToScreenPoint(null, corners[3]);
+        }
+
+        screenCorners[0].y = Screen.height - screenCorners[0].y;
+        screenCorners[1].y = Screen.height - screenCorners[1].y;
+
+        return new Rect(screenCorners[0], screenCorners[1] - screenCorners[0]);
+    }
+
+
+    public ColorBuffer GetHSVPixelBuffer()
     {
 		return HSVPixelBuffer;
     }
@@ -196,6 +248,52 @@ public class DecoratorPanel : Panel
         topSection.gameObject.SetActive(true);
         bottomSection.gameObject.SetActive(true);
         photoRenderer.gameObject.SetActive(true);
+    }
+
+    public void GetImageFromGallery()
+    {
+        newImagePanel.ShowProgress();
+        
+        NativeGalleryController.OpenGallery((Texture2D tex, ExifOrientation orientation) => 
+        {  
+            SetPhoto(tex);
+            newImagePanel.Hide();
+        });
+    }
+
+    public void SaveScreenShot(string path)
+    {
+        // Remove old snapshot file
+        if (File.Exists(path))
+            File.Delete(path);
+
+        // Create a temporary render texture and asign it to the photo camera
+        RenderTexture renderTexture = RenderTexture.GetTemporary((int)photoRenderer.transform.localScale.x, (int)photoRenderer.transform.localScale.y);
+        photoCamera.targetTexture = renderTexture;
+        RenderTexture.active = renderTexture;
+        // Readjust camera orthographic size & photo position
+        float orthosize = photoCamera.orthographicSize;
+        photoCamera.orthographicSize = renderTexture.height / 2;
+        Vector3 cameraPos = photoCamera.transform.position;
+        photoCamera.transform.position = Vector3.zero;
+        Vector3 photoPos = photoRenderer.transform.position;
+        photoRenderer.transform.position = Vector3.zero;
+        // Render
+        photoCamera.Render();
+        // Now grab the rendered image into a texture
+        Texture2D screenshot = new Texture2D(renderTexture.width, renderTexture.height, TextureFormat.ARGB32, false);
+        screenshot.ReadPixels(new Rect(0, 0, renderTexture.width, renderTexture.height), 0, 0);
+        screenshot.Apply();
+        // Wite the texture to disk
+        byte[] jpg = screenshot.EncodeToJPG();
+        File.WriteAllBytes(path, jpg);
+        photoCamera.targetTexture = null;
+        RenderTexture.active = null;
+        RenderTexture.ReleaseTemporary(renderTexture);
+        // Restore camera orthographic size & photo position
+        photoCamera.orthographicSize = orthosize;
+        photoCamera.transform.position = cameraPos;
+        photoRenderer.transform.position = photoPos;
     }
 
     #region Paint tools
