@@ -281,12 +281,12 @@ public class DecoratorPanel : Panel
         // Render
         photoCamera.Render();
         // Now grab the rendered image into a texture
-        Texture2D screenshot = new Texture2D(renderTexture.width, renderTexture.height, TextureFormat.ARGB32, false);
+        Texture2D screenshot = new Texture2D(renderTexture.width, renderTexture.height, TextureFormat.RGB24, false);
         screenshot.ReadPixels(new Rect(0, 0, renderTexture.width, renderTexture.height), 0, 0);
         screenshot.Apply();
         // Wite the texture to disk
-        byte[] jpg = screenshot.EncodeToJPG();
-        File.WriteAllBytes(path, jpg);
+        byte[] png = screenshot.EncodeToPNG();
+        File.WriteAllBytes(path, png);
         photoCamera.targetTexture = null;
         RenderTexture.active = null;
         RenderTexture.ReleaseTemporary(renderTexture);
