@@ -179,7 +179,6 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
 	/// <param name="contents">Contents.</param>
 	public void SetContents(Texture2D contents)
 	{
-		//SetupCanvas();
 		Graphics.Blit(contents, renderTexture);
 		ClearUndoStack();
 	}
@@ -194,9 +193,14 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
             undoBuffer.Add(currentUndo);
         }
 
+        //Texture2D snapshot = GetSnapshot();
         currentUndo = GetSnapshot().EncodeToPNG();
+        /*
+        Debug.Log("PNG size: " + currentUndo.Length);
+        OneBitChannelImage oneBitChannelImageBit = OneBitChannelImage.FromTexture2D(snapshot);
+        Debug.Log("1 bit channel size: " + oneBitChannelImageBit.data.Length);*/
 
-        Debug.Log("Undo saved, stack size: " + undoBuffer.Count + " current is null " + (currentUndo == null));
+       // Debug.Log("Undo saved, stack size: " + undoBuffer.Count + " current is null " + (currentUndo == null));
 	}
 
     /// <summary>
@@ -211,7 +215,6 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
             saved.LoadImage(undoBuffer[undoBuffer.Count-1]);
             undoBuffer.RemoveAt(undoBuffer.Count-1);
             Graphics.Blit(saved, renderTexture);
-            
         }
 
         currentUndo = GetSnapshot().EncodeToPNG();
@@ -225,6 +228,5 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
 		undoBuffer.Clear();
         Debug.Log("Undo Stack Cleared");
 	}
-	#endregion
-	 
+    #endregion
 }
