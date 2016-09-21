@@ -81,8 +81,10 @@ public class PaintTool : DrawingToolBase
     #region Class implementation
     static public void ReleaseMemory()
     {
-    	Destroy(masksTexture);
-    	Destroy(masksPixelBuffer);
+    	DestroyImmediate(masksTexture);
+		DestroyImmediate(masksPixelBuffer);
+		Resources.UnloadUnusedAssets(); 
+		System.GC.Collect();
     }
 
     private float GetStrokeRadius(List<Vector2> points)

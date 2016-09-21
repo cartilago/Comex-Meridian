@@ -56,32 +56,37 @@ public class DecoratorPanel : Panel
         currentTool = tools[0];
     }
 
+    private bool twoFinger;
+
     private void Update()
     {
         // Touch input
         if (Input.touchCount == 1)
         {
-            Touch touchZero = Input.GetTouch(0);
+            Touch touchOne = Input.GetTouch(0);
 
-            if (touchZero.phase == TouchPhase.Began)
+            if (touchOne.phase == TouchPhase.Began)
             {
                 // UI elements block touch input
-                if (EventSystem.current.IsPointerOverGameObject(touchZero.fingerId))
+                if (EventSystem.current.IsPointerOverGameObject(touchOne.fingerId))
                     return;
 
-                currentTool.TouchDown(touchZero.position);
+                currentTool.TouchDown(touchOne.position);
                 mouseOrFingerDown = true;
             }
-            else if (touchZero.phase == TouchPhase.Moved && mouseOrFingerDown == true)
+            else if (touchOne.phase == TouchPhase.Moved && mouseOrFingerDown == true)
             {
-                currentTool.TouchMove(touchZero.position);
+                currentTool.TouchMove(touchOne.position);
             }
-            else if (touchZero.phase == TouchPhase.Ended && mouseOrFingerDown == true)
+            else if (touchOne.phase == TouchPhase.Ended && mouseOrFingerDown == true)
             {
                 mouseOrFingerDown = false;
-                currentTool.TouchUp(touchZero.position);
+                currentTool.TouchUp(touchOne.position);
             }
+            return;
         }
+
+		currentTool.Update();
 
         // Mouse input
         if (Input.GetMouseButtonDown(0))
@@ -110,7 +115,7 @@ public class DecoratorPanel : Panel
     {
         FingerCanvas.Instance.ClearUndoStack();
         FingerCanvas.Instance.Clear();
-        	PaintTool.ReleaseMemory();
+      	PaintTool.ReleaseMemory();
     }
     #endregion
 
@@ -156,12 +161,14 @@ public class DecoratorPanel : Panel
     public void SetPhoto(Texture2D photo)
     {
         Reset();
-
+       
         Debug.Log (string.Format("Photo set with size: {0}x{1}", photo.width, photo.height));
 
+		ColorBuffer oldHSVPixelBuffer = HSVPixelBuffer;
 		HSVPixelBuffer = new ColorBuffer(photo.width, photo.height, Color32Utils.ConvertToHSV(photo.GetPixels()));
 
         // Convert photo to internal HSV representation, shader will convert it back to RGB.
+        Texture oldHSVTexture = photoRenderer.material.GetTexture("_MainTex");
         Texture2D hsvTexture = new Texture2D(photo.width, photo.height);
 		hsvTexture.SetPixels(HSVPixelBuffer.data);
 		hsvTexture.filterMode = FilterMode.Point;
@@ -180,16 +187,26 @@ public class DecoratorPanel : Panel
 		canvasCamera.orthographicSize = photoCamera.orthographicSize = GetBaseOrthographicSize();
 		canvasCamera.aspect = photoCamera.aspect;
 
+		ResetCameraPosition();
+
         FingerCanvas.Instance.SetupCanvas();
         FingerCanvas.Instance.SaveUndo();
-
 		
         // We should wait for the UI to complete layout setup or will get wrong coordinates
         Invoke("ResetCameraPosition", .01f);
+
+		// Release old texture memory
+		DestroyImmediate(oldHSVPixelBuffer);
+		DestroyImmediate(oldHSVTexture,true);
+		Resources.UnloadUnusedAssets(); 
+		System.GC.Collect();
     }
 
     public void ResetCameraPosition()
     {
+		photoCamera.transform.position = canvasCamera.transform.position = Vector3.zero;
+		photoCamera.orthographicSize = canvasCamera.orthographicSize = GetBaseOrthographicSize();
+
         Vector3[] topSectionCorners = new Vector3[4];
         Vector3[] bottomSectionCorners = new Vector3[4];
 
@@ -202,7 +219,7 @@ public class DecoratorPanel : Panel
         Debug.Log(topSectionScreenRect);
 
         Vector2 p = photoCamera.ScreenToWorldPoint(new Vector3(Screen.width / 2, (topSectionScreenRect.yMax + bottomSectionScreenRect.yMin) / 2, 0));
-       photoRenderer.transform.position = new Vector3(0, -p.y, 0);
+       	photoRenderer.transform.position = new Vector3(0, -p.y, 0);
     }
 
     public static Rect GetScreenRect(RectTransform rectTransform, Canvas canvas)
@@ -256,8 +273,36 @@ public class DecoratorPanel : Panel
         
         NativeGalleryController.OpenGallery((Texture2D tex, ExifOrientation orientation) => 
         {  
-            SetPhoto(tex);
+        	if (tex != null)
+        	{
+        		// Deal with EXIF rotations
+				Texture2D texture = new Texture2D(tex.height, tex.width);
+            	Color32[] photoBuffer = texture.GetPixels32();
+
+        		switch (orientation)
+        		{
+					case ExifOrientation.ORIENTATION_UNDEFINED : break;
+					case ExifOrientation.ORIENTATION_NORMAL: break;
+					case ExifOrientation.ORIENTATION_FLIP_HORIZONTAL: photoBuffer = Color32Utils.FlipColorArrayHorizontally(photoBuffer, tex.width, tex.height); break;
+					case ExifOrientation.ORIENTATION_ROTATE_180: photoBuffer = Color32Utils.RotateColorArrayLeft(photoBuffer, tex.width, tex.height); Color32Utils.RotateColorArrayLeft(photoBuffer, tex.width, tex.height);break;
+					case ExifOrientation.ORIENTATION_FLIP_VERTICAL: photoBuffer = Color32Utils.FlipColorArrayVertically(photoBuffer, tex.width, tex.height); break;
+					case ExifOrientation.ORIENTATION_TRANSPOSE: photoBuffer = Color32Utils.RotateColorArrayLeft(photoBuffer, tex.width, tex.height); break; photoBuffer = Color32Utils.FlipColorArrayVertically(photoBuffer, tex.width, tex.height); break;
+					case ExifOrientation.ORIENTATION_ROTATE_90: photoBuffer = Color32Utils.RotateColorArrayRight(photoBuffer, tex.width, tex.height); break;
+					case ExifOrientation.ORIENTATION_TRANSVERSE: photoBuffer = Color32Utils.RotateColorArrayLeft(photoBuffer, tex.width, tex.height); break; photoBuffer = Color32Utils.FlipColorArrayHorizontally(photoBuffer, tex.width, tex.height); break;
+					case ExifOrientation.ORIENTATION_ROTATE_270: photoBuffer = Color32Utils.RotateColorArrayLeft(photoBuffer, tex.width, tex.height); break;
+        		}
+
+				texture.SetPixels32(photoBuffer);
+            	texture.Apply();
+      
+            	SetPhoto(tex);
+				DestroyImmediate(tex);
+				Resources.UnloadUnusedAssets(); 
+				System.GC.Collect();
+            }
             newImagePanel.Hide();
+
+			// Release old texture memory
         });
     }
 
@@ -335,13 +380,20 @@ public class DecoratorPanel : Panel
     #region IO
     public void SaveFile(string filename)
     {
+		Texture2D snapshot = FingerCanvas.Instance.GetSnapshot();	
+
         fileMenu.SetActive(false);
 
-        currentProject.SetEncodedPhoto(currentProject.GetPhoto(), FingerCanvas.Instance.GetSnapshot());
+        currentProject.SetEncodedPhoto(currentProject.GetPhoto(), snapshot);
 		currentProject.SetColors(ColorsManager.Instance.GetButtonColorWidgets());
 
         string serializedProject = JsonUtility.ToJson(currentProject);
         System.IO.File.WriteAllText(filename, serializedProject);
+
+		// Release texture memory
+		Destroy(snapshot);
+		Resources.UnloadUnusedAssets(); 
+		System.GC.Collect();
     }
 
     public void LoadFile(string filename)

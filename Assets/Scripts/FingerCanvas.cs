@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Meridian.Framework.Utils;
 
+public enum EUndoMode {PNG, OneBitChannel};
 
 public class FingerCanvas : MonoSingleton<FingerCanvas> 
 {
@@ -12,11 +13,13 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
 	public Renderer canvasRenderer;
 	public SpriteRenderer brushSprite;
 	public Material[] brushMaterials;
+	public EUndoMode undoMode;
 
 	private bool newTexture;
-	private List<byte[]>undoBuffer = new List<byte[]>();
-    private byte[] currentUndo = null;
-
+	private List<OneBitChannelImage>obcUndoBuffer = new List<OneBitChannelImage>();
+	private OneBitChannelImage obcCurrentUndo = null;
+	private List<byte[]>pngUndoBuffer = new List<byte[]>();
+	private byte[] pngCurrentUndo = null;
 	#endregion
 
 	#region Class accessors
@@ -38,6 +41,7 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
 			{
 				if (_renderTexture.width != (int)canvasRenderer.transform.localScale.x || _renderTexture.height != (int)canvasRenderer.transform.localScale.y)
 				{
+					DestroyImmediate(_renderTexture);
 					_renderTexture = new RenderTexture((int)canvasRenderer.transform.localScale.x, (int)canvasRenderer.transform.localScale.y, 0);
 					newTexture = true;
 				}
@@ -160,6 +164,16 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
 	}
 
 	/// <summary>
+	/// Sets the contents of the renderTexture.
+	/// </summary>
+	/// <param name="contents">Contents.</param>
+	public void SetContents(Texture2D contents)
+	{
+		Graphics.Blit(contents, renderTexture);
+		ClearUndoStack();
+	}
+
+	/// <summary>
 	/// Gets a snapshot of the current rendertexture contents..
 	/// </summary>
 	/// <returns>The snapshot.</returns>
@@ -174,58 +188,93 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
 	}
 
 	/// <summary>
-	/// Sets the contents of the renderTexture.
-	/// </summary>
-	/// <param name="contents">Contents.</param>
-	public void SetContents(Texture2D contents)
-	{
-		Graphics.Blit(contents, renderTexture);
-		ClearUndoStack();
-	}
-
-	/// <summary>
 	/// Saves current canvas image to undo stack, image is encoded as PNG.
 	/// </summary>
 	public void SaveUndo()
 	{ 
-        if (currentUndo != null)
-        {
-            undoBuffer.Add(currentUndo);
-        }
+		Texture2D snapshot = GetSnapshot();	
 
-        //Texture2D snapshot = GetSnapshot();
-        currentUndo = GetSnapshot().EncodeToPNG();
-        /*
-        Debug.Log("PNG size: " + currentUndo.Length);
-        OneBitChannelImage oneBitChannelImageBit = OneBitChannelImage.FromTexture2D(snapshot);
-        Debug.Log("1 bit channel size: " + oneBitChannelImageBit.data.Length);*/
+		if (undoMode ==  EUndoMode.PNG)
+		{
+			if (pngCurrentUndo != null)
+				pngUndoBuffer.Add(pngCurrentUndo);
 
-       // Debug.Log("Undo saved, stack size: " + undoBuffer.Count + " current is null " + (currentUndo == null));
-	}
+			pngCurrentUndo = snapshot.EncodeToPNG();
+			Debug.Log("Undo size: " + pngCurrentUndo.Length);
+		}
+		else
+		{
+			if (obcCurrentUndo != null)
+            	obcUndoBuffer.Add(obcCurrentUndo);
+
+			obcCurrentUndo = OneBitChannelImage.FromTexture2D(snapshot);
+			Debug.Log("Undo size: " + obcCurrentUndo.data.Length);
+		}
+
+        // Release texture memory
+		DestroyImmediate(snapshot);
+		Resources.UnloadUnusedAssets(); 
+		System.GC.Collect();
+	} 
 
     /// <summary>
     /// Restores a PNG encode image from the from undo stack.
     /// </summary>
     public void RestoreFromUndoStack()
     {
-        if (undoBuffer.Count > 0)
-        {
-            RenderTexture.active = renderTexture;
-            Texture2D saved = new Texture2D(2, 2);
-            saved.LoadImage(undoBuffer[undoBuffer.Count-1]);
-            undoBuffer.RemoveAt(undoBuffer.Count-1);
-            Graphics.Blit(saved, renderTexture);
+		Texture2D snapshot = null;
+		Texture2D saved = null;
+
+    	if (undoMode == EUndoMode.PNG)
+    	{
+			if (pngUndoBuffer.Count > 0)
+        	{
+				saved = new Texture2D(2, 2);
+	            saved.LoadImage(pngUndoBuffer[pngUndoBuffer.Count-1]);
+				RenderTexture.active = renderTexture;
+				Graphics.Blit(saved, renderTexture);
+				pngUndoBuffer.RemoveAt(pngUndoBuffer.Count-1);
+
+				// Save undo again
+				snapshot = GetSnapshot();	
+				pngCurrentUndo = snapshot.EncodeToPNG();
+
+				Debug.Log("Undo restored, stack size: " + pngUndoBuffer.Count + " current is null " + (pngCurrentUndo == null));
+	        }
+    	}
+    	else
+    	{ 
+			if (obcUndoBuffer.Count > 0)
+        	{
+				OneBitChannelImage oneBitChannelImage = obcUndoBuffer[obcUndoBuffer.Count-1];
+				saved = oneBitChannelImage.ToTexture2D();
+				RenderTexture.active = renderTexture;
+				Graphics.Blit(saved, renderTexture);
+				obcUndoBuffer.RemoveAt(obcUndoBuffer.Count-1);
+
+				// Save undo again
+				snapshot = GetSnapshot();	
+				obcCurrentUndo = OneBitChannelImage.FromTexture2D(snapshot);
+
+				Debug.Log("Undo restored, stack size: " + obcUndoBuffer.Count + " current is null " + (obcCurrentUndo == null));
+       		}
         }
 
-        currentUndo = GetSnapshot().EncodeToPNG();
-
-        Debug.Log("Undo restored, stack size: " + undoBuffer.Count + " current is null " + (currentUndo == null));
+        // Release memory
+        DestroyImmediate(snapshot);
+		DestroyImmediate(saved);
+		Resources.UnloadUnusedAssets(); 
+		System.GC.Collect();
     }
 
     public void ClearUndoStack()
 	{
-        currentUndo = null;
-		undoBuffer.Clear();
+		pngCurrentUndo = null;
+        obcCurrentUndo = null;
+		obcUndoBuffer.Clear();
+		// Release memory
+		Resources.UnloadUnusedAssets(); 
+		System.GC.Collect();
         Debug.Log("Undo Stack Cleared");
 	}
     #endregion

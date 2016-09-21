@@ -91,7 +91,7 @@ public class Project
     static public Texture2D Texture2DFromString(string base64EncodedData)
     {
         byte[] base64EncodedBytes = System.Convert.FromBase64String(base64EncodedData);
-        Texture2D texture = new Texture2D(2, 2);
+        Texture2D texture = new Texture2D(2, 2, TextureFormat.ARGB32, false);
         texture.LoadImage(base64EncodedBytes);
         return texture;
     }

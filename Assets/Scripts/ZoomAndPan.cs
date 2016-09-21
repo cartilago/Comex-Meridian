@@ -17,7 +17,7 @@ public class ZoomAndPan : MonoBehaviour
         if (Input.touchCount == 1)
         {
             Touch touchZero = Input.GetTouch(0);
-            Camera.main.transform.position -= new Vector3(touchZero.deltaPosition.x, touchZero.deltaPosition.y, 0) * zoomFactor * 2;
+            Camera.main.transform.position -= new Vector3(touchZero.deltaPosition.x, touchZero.deltaPosition.y, 0) * zoomFactor * 1;
         }
 
         // Zoom

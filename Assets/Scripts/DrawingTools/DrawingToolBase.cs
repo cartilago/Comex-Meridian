@@ -10,8 +10,9 @@ using System.Collections;
 /// </summary>
 public class DrawingToolBase : MonoBehaviour
 {
+	#region Class members
     public Toggle toggle;
-    public GameObject drawingActionPrefab;
+    #endregion
 
     #region Class implementation
     virtual public void TouchDown(Vector2 pos) { }
@@ -19,5 +20,7 @@ public class DrawingToolBase : MonoBehaviour
     virtual public void TouchMove(Vector2 pos) { }
 
     virtual public void TouchUp(Vector2 pos) { }
+
+    virtual public void Update() {}
     #endregion
 }
