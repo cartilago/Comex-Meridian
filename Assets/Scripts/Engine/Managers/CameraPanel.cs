@@ -68,7 +68,7 @@ public class CameraPanel : Panel
     {
 		previewRenderer.gameObject.SetActive(false);
 		initializingMessage.SetActive(true);
-		DecoratorPanel.Instance.ResetCameraPosition();
+		DecoratorPanel.Instance.ResetView();
 
         // Start WebCam
         if (aurhorizationStatus == WebCamAuthorizationStatus.Off || aurhorizationStatus == WebCamAuthorizationStatus.Denied)
@@ -203,6 +203,8 @@ public class CameraPanel : Panel
 
         photoBuffer = webCamTexture.GetPixels32();
         photoSFX.Play(cachedAudioSource);
+
+        Debug.Log(string.Format("WebcamTexture size {0}x{1}", webCamTexture.width, webCamTexture.height));
 
         if (photoAngle == 0)
         {

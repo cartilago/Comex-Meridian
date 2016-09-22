@@ -138,8 +138,10 @@ public static class Color32Utils
 
 	    	float d = q.x - Mathf.Min(q.w, q.y);
 	    	float e = 1.0e-10f;
+
+			Color hsvPixel = new Color (Mathf.Abs(q.z + (q.w - q.y) / (6.0f * d + e)), d / (q.x + e), q.x, c.a);
 	    
-			convertedArray[i] = new Color (Mathf.Abs(q.z + (q.w - q.y) / (6.0f * d + e)), d / (q.x + e), q.x, c.a);
+			convertedArray[i] = new Color(hsvPixel.r, hsvPixel.g, hsvPixel.b);
 		}
 
 		return convertedArray;

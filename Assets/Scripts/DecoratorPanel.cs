@@ -152,7 +152,7 @@ public class DecoratorPanel : Panel
     public float GetBaseOrthographicSize()
     {
 		float screenAspectRatio = (float)Screen.height / (float)Screen.width;
-        Vector2 photoSize = new Vector2(currentProject.GetPhoto().width, currentProject.GetPhoto().height);
+        Vector2 photoSize = new Vector2(HSVPixelBuffer.width, HSVPixelBuffer.height);
         float photoAspectRatio = photoSize.y / photoSize.x;
 
         return (photoSize.y / 2) * (screenAspectRatio / photoAspectRatio);
@@ -161,8 +161,6 @@ public class DecoratorPanel : Panel
     public void SetPhoto(Texture2D photo)
     {
         Reset();
-       
-        Debug.Log (string.Format("Photo set with size: {0}x{1}", photo.width, photo.height));
 
 		ColorBuffer oldHSVPixelBuffer = HSVPixelBuffer;
 		HSVPixelBuffer = new ColorBuffer(photo.width, photo.height, Color32Utils.ConvertToHSV(photo.GetPixels()));
@@ -180,20 +178,20 @@ public class DecoratorPanel : Panel
 		currentProject.SetPhoto(photo);
 	
 		// Set correct size for both camera orthographic view & photo renderer            
-		float screenAspectRatio = Screen.width / (float)Screen.height;//(float)Screen.height / (float)Screen.width;
-		Vector2 photoSize = new Vector2(photo.width, photo.height);  
-        float photoAspectRatio = photoSize.y / photoSize.x;
-		canvasRenderer.transform.localScale = photoRenderer.transform.localScale = photoSize; 
-		canvasCamera.orthographicSize = photoCamera.orthographicSize = GetBaseOrthographicSize();
-		canvasCamera.aspect = photoCamera.aspect;
+		//float screenAspectRatio = Screen.width / (float)Screen.height;
+		//Vector2 photoSize = new Vector2(photo.width, photo.height);  
+        //float photoAspectRatio = photoSize.y / photoSize.x;
+		//canvasRenderer.transform.localScale = photoRenderer.transform.localScale = GetBaseOrthographicSize(); //photoSize; 
+		//canvasCamera.orthographicSize = photoCamera.orthographicSize = GetBaseOrthographicSize();
+		//canvasCamera.aspect = photoCamera.aspect;
 
-		ResetCameraPosition();
+		ResetView();
 
         FingerCanvas.Instance.SetupCanvas();
         FingerCanvas.Instance.SaveUndo();
 		
         // We should wait for the UI to complete layout setup or will get wrong coordinates
-        Invoke("ResetCameraPosition", .01f);
+        Invoke("ResetView", .01f);
 
 		// Release old texture memory
 		DestroyImmediate(oldHSVPixelBuffer);
@@ -202,10 +200,12 @@ public class DecoratorPanel : Panel
 		System.GC.Collect();
     }
 
-    public void ResetCameraPosition()
+    public void ResetView()
     {
-		photoCamera.transform.position = canvasCamera.transform.position = Vector3.zero;
-		photoCamera.orthographicSize = canvasCamera.orthographicSize = GetBaseOrthographicSize();
+		canvasCamera.transform.position = photoCamera.transform.position = Vector3.zero;
+		canvasCamera.orthographicSize = photoCamera.orthographicSize =  GetBaseOrthographicSize();
+		canvasCamera.aspect = photoCamera.aspect;
+		canvasRenderer.transform.localScale = photoRenderer.transform.localScale = new Vector2(HSVPixelBuffer.width, HSVPixelBuffer.height);
 
         Vector3[] topSectionCorners = new Vector3[4];
         Vector3[] bottomSectionCorners = new Vector3[4];
@@ -216,7 +216,6 @@ public class DecoratorPanel : Panel
         Canvas canvas = FindObjectOfType<Canvas>();
         Rect topSectionScreenRect = GetScreenRect(topSection.GetComponent<RectTransform>(), canvas);
         Rect bottomSectionScreenRect = GetScreenRect(bottomSection.GetComponent<RectTransform>(), canvas);
-        Debug.Log(topSectionScreenRect);
 
         Vector2 p = photoCamera.ScreenToWorldPoint(new Vector3(Screen.width / 2, (topSectionScreenRect.yMax + bottomSectionScreenRect.yMin) / 2, 0));
        	photoRenderer.transform.position = new Vector3(0, -p.y, 0);
