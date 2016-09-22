@@ -164,18 +164,18 @@ public class PaintTool : DrawingToolBase
 
 	private void ProcessPixel(int x, int y, ref Color32 currentColor, Color32 startColor, Color maskColor, float hueTolerance, float saturationTolerance, float valueTolerance, Queue<Point>openNodes, ColorBuffer32 pixelBuffer, ColorBuffer32 masksBuffer, ColorBuffer32 copyBmp)
     {
-		Color32 c = copyBmp[x , y];
+		Color32 pixel = copyBmp[x , y];
 	
-		if (ColorTest(c, currentColor, 1) == true)
+		if (ColorTest(pixel, currentColor, startColor, 1) == true)
         {
-        	currentColor = c;
+            	currentColor = pixel;
          	copyBmp[x, y] = Color.black;
            	masksBuffer[x, y] = maskColor;
 			openNodes.Enqueue(new Point(x, y, currentColor));
         }
     }
 
-	public static bool ColorTest(Color32 c1, Color32 c2, float tol) 
+	public static bool ColorTest(Color32 c1, Color32 c2, Color32 startColor, float tol) 
 	{
         float diffRed   = Mathf.Abs(c1.r - c2.r);
         float diffGreen = Mathf.Abs(c1.g - c2.g);
@@ -197,10 +197,10 @@ public class PaintTool : DrawingToolBase
         { 
 			// Do HSV comparsion
 			HSVColor color1 = HSVColor.FromRGBA(c1.r / 255f, c1.g / 255f, c1.b / 255f, 1);
-			HSVColor color2 = HSVColor.FromRGBA(c2.r / 255f, c2.g / 255f, c2.b / 255f, 1);
+			HSVColor color2 = HSVColor.FromRGBA(startColor.r / 255f, startColor.g / 255f, startColor.b / 255f, 1);
 
 			// Only for highly saturated colors
-			if (Mathf.Abs(color1.s- color2.s) > 0.25f)
+			if (Mathf.Abs(color1.s- color2.s) > 0.5f)
 				return false;
         	
             return true;
