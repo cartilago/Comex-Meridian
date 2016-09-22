@@ -160,32 +160,6 @@ public static class Color32Utils
 	}
 }
 
-public class ColorBuffer : Object
-{
-	public Color[] data;
-	public readonly int height;
-	public readonly int width;
-
-	public ColorBuffer(int width, int height, Color[] colorData)
-	{
-		this.width = width;
-		this.height = height;
-		this.data = colorData;
-	}
-
-	public Color this[int x, int y]
-	{
-		get
-		{
-			return data[(y * width) + x];
-		}
-		set
-		{
-			data[(y * width) + x] = value;
-		}
-	}
-}
-
 public class ColorBuffer32 : Object
 {
     public Color32[] data;

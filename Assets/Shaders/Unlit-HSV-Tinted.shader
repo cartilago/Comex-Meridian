@@ -78,10 +78,10 @@ Shader "Custom/Unlit-HSV-Tinted"
 
 			fixed4 frag(v2f i) :COLOR
 			{
-				fixed4 hsv = tex2D(_MainTex, i.uv_MainTex);
-
+				// Sample textures
+				fixed3 tex = tex2D(_MainTex, i.uv_MainTex);
 				fixed4 mask = tex2D(_TintMask, i.uv_TintMask);
-
+				// Box filter 3x3 mask texture for a smoother blending
 				mask += tex2D(_TintMask, half2(i.uv_TintMask.x + _Distance, i.uv_TintMask.y + _Distance));
 				mask += tex2D(_TintMask, half2(i.uv_TintMask.x + _Distance, i.uv_TintMask.y));
 				mask += tex2D(_TintMask, half2(i.uv_TintMask.x, i.uv_TintMask.y + _Distance));
@@ -91,23 +91,22 @@ Shader "Custom/Unlit-HSV-Tinted"
 				mask += tex2D(_TintMask, half2(i.uv_TintMask.x - _Distance, i.uv_TintMask.y));
 				mask += tex2D(_TintMask, half2(i.uv_TintMask.x, i.uv_TintMask.y - _Distance));
 				mask = mask / 9;
-			
 
-				fixed3 photoRGB = hsv2rgb(hsv.rgb);
+				// Convert rgv to hsv
+				float3 hsv = rgb2hsv(tex);
 
-				fixed3 result1 = lerp(photoRGB, hsv2rgb(_Color1.rgb) * hsv.b, mask.r); // Replace color with mask
+				// Colorize
+				fixed3 result1 = (mask.r > 0) ? lerp(tex, _Color1.rgb * hsv.b, mask.r) : tex; 
+				fixed3 result2 = (mask.g > 0) ? lerp(tex, _Color2.rgb * hsv.b, mask.g) : tex;
+				fixed3 result3 = (mask.b > 0) ? lerp(tex, _Color3.rgb * hsv.b, mask.b) : tex;
+				fixed3 result4 = (mask.a > 0) ? lerp(tex, _Color4.rgb * hsv.b, mask.a) : tex;
 
-				fixed3 result2 = lerp(photoRGB, hsv2rgb(_Color2.rgb) * hsv.b, mask.g);
-
-				fixed3 result3 = lerp(photoRGB, hsv2rgb(_Color3.rgb) * hsv.b, mask.b);
-
-				fixed3 result4 = lerp(photoRGB, hsv2rgb(_Color4.rgb) * hsv.b, mask.a);
-
+				// Blend all colorizing results
 				fixed3 result = lerp(result1, result2, mask.g);
 				result = lerp(result , result3, mask.b);
 				result = lerp(result, result4, mask.a);
-	
-				return fixed4(result, 1);
+
+				return fixed4(result,1);
 			}
 
 			ENDCG

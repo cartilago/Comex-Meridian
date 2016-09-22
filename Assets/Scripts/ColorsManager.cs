@@ -131,7 +131,7 @@ public class ColorsManager : MonoSingleton<ColorsManager>
             colorButtons[index].SetColorWidget(newColorWidget);
 
             // Pass the color to the shader
-            DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color" + (index + 1).ToString(), Color32Utils.ConvertToHSV(newColorWidget.color));
+            DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color" + (index + 1).ToString(), newColorWidget.color);
         }
         else
         {
@@ -140,7 +140,7 @@ public class ColorsManager : MonoSingleton<ColorsManager>
             colorButtons[index].SetColorWidget(null);
 
             // Pass the color to the shader
-            DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color" + (index + 1).ToString(), Color32Utils.ConvertToHSV(Color.black));
+            DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color" + (index + 1).ToString(), Color.black);
         }
     }
 
@@ -157,9 +157,9 @@ public class ColorsManager : MonoSingleton<ColorsManager>
         // Pass color information to shader
         switch (currentColor)
         {
-            case 0: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color1", Color32Utils.ConvertToHSV(newColorWidget.GetComponent<Graphic>().color)); break;
-            case 1: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color2", Color32Utils.ConvertToHSV(newColorWidget.GetComponent<Graphic>().color)); break;
-            case 2: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color3", Color32Utils.ConvertToHSV(newColorWidget.GetComponent<Graphic>().color)); break;
+            case 0: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color1", newColorWidget.GetComponent<Graphic>().color); break;
+            case 1: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color2", newColorWidget.GetComponent<Graphic>().color); break;
+            case 2: DecoratorPanel.Instance.photoRenderer.material.SetColor("_Color3", newColorWidget.GetComponent<Graphic>().color); break;
         }
     }
 

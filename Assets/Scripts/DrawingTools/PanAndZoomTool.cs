@@ -3,13 +3,11 @@ using System.Collections;
 
 public class PanAndZoomTool : DrawingToolBase
 {
-    private Vector2 prevPos;
-    float zoomFactor = 1;
-
     #region Class members
 	public float perspectiveZoomSpeed = 0.5f;        // The rate of change of the field of view in perspective mode.
     public float orthoZoomSpeed = 0.5f;        // The rate of change of the orthographic size in orthographic mode.
     private bool zooming;
+	private Vector2 prevPos;
     #endregion
 
     #region Class implementation

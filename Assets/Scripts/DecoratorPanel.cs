@@ -26,7 +26,7 @@ public class DecoratorPanel : Panel
     private bool mouseOrFingerDown;
 
     private DrawingToolBase currentTool;
-    private ColorBuffer HSVPixelBuffer;
+    private ColorBuffer32 pixelBuffer;
     #endregion
 
     #region Class accessors
@@ -152,7 +152,7 @@ public class DecoratorPanel : Panel
     public float GetBaseOrthographicSize()
     {
 		float screenAspectRatio = (float)Screen.height / (float)Screen.width;
-        Vector2 photoSize = new Vector2(HSVPixelBuffer.width, HSVPixelBuffer.height);
+        Vector2 photoSize = new Vector2(pixelBuffer.width, pixelBuffer.height);
         float photoAspectRatio = photoSize.y / photoSize.x;
 
         return (photoSize.y / 2) * (screenAspectRatio / photoAspectRatio);
@@ -162,29 +162,18 @@ public class DecoratorPanel : Panel
     {
         Reset();
 
-		ColorBuffer oldHSVPixelBuffer = HSVPixelBuffer;
-		HSVPixelBuffer = new ColorBuffer(photo.width, photo.height, Color32Utils.ConvertToHSV(photo.GetPixels()));
+		ColorBuffer32 oldPixelBuffer = pixelBuffer;
+		pixelBuffer = new ColorBuffer32(photo.width, photo.height, photo.GetPixels32());
+	
+        Texture oldtexture = photoRenderer.material.GetTexture("_MainTex");
+        Texture2D newTexture = new Texture2D(photo.width, photo.height);
+		newTexture.SetPixels32(pixelBuffer.data);
+		newTexture.Apply();
+		photoRenderer.material.SetTexture("_MainTex", newTexture);
 
-        // Convert photo to internal HSV representation, shader will convert it back to RGB.
-        Texture oldHSVTexture = photoRenderer.material.GetTexture("_MainTex");
-        Texture2D hsvTexture = new Texture2D(photo.width, photo.height);
-		hsvTexture.SetPixels(HSVPixelBuffer.data);
-		hsvTexture.filterMode = FilterMode.Point;
-		hsvTexture.Apply();
-		photoRenderer.material.SetTexture("_MainTex", hsvTexture);
-
-		Debug.Log (string.Format("HSV buffer size: {0}x{1}", hsvTexture.width, hsvTexture.height));
+		Debug.Log (string.Format("Pixel buffer size: {0}x{1}", newTexture.width, newTexture.height));
 
 		currentProject.SetPhoto(photo);
-	
-		// Set correct size for both camera orthographic view & photo renderer            
-		//float screenAspectRatio = Screen.width / (float)Screen.height;
-		//Vector2 photoSize = new Vector2(photo.width, photo.height);  
-        //float photoAspectRatio = photoSize.y / photoSize.x;
-		//canvasRenderer.transform.localScale = photoRenderer.transform.localScale = GetBaseOrthographicSize(); //photoSize; 
-		//canvasCamera.orthographicSize = photoCamera.orthographicSize = GetBaseOrthographicSize();
-		//canvasCamera.aspect = photoCamera.aspect;
-
 		ResetView();
 
         FingerCanvas.Instance.SetupCanvas();
@@ -194,8 +183,8 @@ public class DecoratorPanel : Panel
         Invoke("ResetView", .01f);
 
 		// Release old texture memory
-		DestroyImmediate(oldHSVPixelBuffer);
-		DestroyImmediate(oldHSVTexture,true);
+		DestroyImmediate(oldPixelBuffer);
+		DestroyImmediate(oldtexture,true);
 		Resources.UnloadUnusedAssets(); 
 		System.GC.Collect();
     }
@@ -205,7 +194,7 @@ public class DecoratorPanel : Panel
 		canvasCamera.transform.position = photoCamera.transform.position = Vector3.zero;
 		canvasCamera.orthographicSize = photoCamera.orthographicSize =  GetBaseOrthographicSize();
 		canvasCamera.aspect = photoCamera.aspect;
-		canvasRenderer.transform.localScale = photoRenderer.transform.localScale = new Vector2(HSVPixelBuffer.width, HSVPixelBuffer.height);
+		canvasRenderer.transform.localScale = photoRenderer.transform.localScale = new Vector2(pixelBuffer.width, pixelBuffer.height);
 
         Vector3[] topSectionCorners = new Vector3[4];
         Vector3[] bottomSectionCorners = new Vector3[4];
@@ -247,9 +236,9 @@ public class DecoratorPanel : Panel
     }
 
 
-    public ColorBuffer GetHSVPixelBuffer()
+    public ColorBuffer32 GetPixelBuffer()
     {
-		return HSVPixelBuffer;
+		return pixelBuffer;
     }
 
     public void Hide()
@@ -285,9 +274,9 @@ public class DecoratorPanel : Panel
 					case ExifOrientation.ORIENTATION_FLIP_HORIZONTAL: photoBuffer = Color32Utils.FlipColorArrayHorizontally(photoBuffer, tex.width, tex.height); break;
 					case ExifOrientation.ORIENTATION_ROTATE_180: photoBuffer = Color32Utils.RotateColorArrayLeft(photoBuffer, tex.width, tex.height); Color32Utils.RotateColorArrayLeft(photoBuffer, tex.width, tex.height);break;
 					case ExifOrientation.ORIENTATION_FLIP_VERTICAL: photoBuffer = Color32Utils.FlipColorArrayVertically(photoBuffer, tex.width, tex.height); break;
-					case ExifOrientation.ORIENTATION_TRANSPOSE: photoBuffer = Color32Utils.RotateColorArrayLeft(photoBuffer, tex.width, tex.height); break; photoBuffer = Color32Utils.FlipColorArrayVertically(photoBuffer, tex.width, tex.height); break;
+					case ExifOrientation.ORIENTATION_TRANSPOSE: photoBuffer = Color32Utils.RotateColorArrayLeft(photoBuffer, tex.width, tex.height); photoBuffer = Color32Utils.FlipColorArrayVertically(photoBuffer, tex.width, tex.height); break;
 					case ExifOrientation.ORIENTATION_ROTATE_90: photoBuffer = Color32Utils.RotateColorArrayRight(photoBuffer, tex.width, tex.height); break;
-					case ExifOrientation.ORIENTATION_TRANSVERSE: photoBuffer = Color32Utils.RotateColorArrayLeft(photoBuffer, tex.width, tex.height); break; photoBuffer = Color32Utils.FlipColorArrayHorizontally(photoBuffer, tex.width, tex.height); break;
+					case ExifOrientation.ORIENTATION_TRANSVERSE: photoBuffer = Color32Utils.RotateColorArrayLeft(photoBuffer, tex.width, tex.height); photoBuffer = Color32Utils.FlipColorArrayHorizontally(photoBuffer, tex.width, tex.height); break;
 					case ExifOrientation.ORIENTATION_ROTATE_270: photoBuffer = Color32Utils.RotateColorArrayLeft(photoBuffer, tex.width, tex.height); break;
         		}
 

@@ -87,6 +87,11 @@ public struct HSVColor
 	{
 		return new Vector3(Mathf.Abs(value.x), Mathf.Abs(value.y), Mathf.Abs(value.z));
 	}
+
+	public string ToString()
+	{
+		return string.Format("h:{0} s:{1} v:{2}", h,s,v);
+	}
 }
 
 public class HSVColorBuffer
