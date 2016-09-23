@@ -4,8 +4,7 @@ using System.Collections;
 public class PanAndZoomTool : DrawingToolBase
 {
     #region Class members
-	public float perspectiveZoomSpeed = 0.5f;        // The rate of change of the field of view in perspective mode.
-    public float orthoZoomSpeed = 0.5f;        // The rate of change of the orthographic size in orthographic mode.
+    public float zoomSpeed = 0.5f;        // The rate of change of the orthographic size in orthographic mode.
     private bool zooming;
 	private Vector2 prevPos;
     #endregion
@@ -40,7 +39,7 @@ public class PanAndZoomTool : DrawingToolBase
         // If there are two touches on the device...
         if (Input.touchCount == 2)
         {
-        	zooming = true;
+         	zooming = true;
             // Store both touches.
             Touch touchZero = Input.GetTouch(0);
             Touch touchOne = Input.GetTouch(1);
@@ -56,11 +55,9 @@ public class PanAndZoomTool : DrawingToolBase
             // Find the difference in the distances between each frame.
             float deltaMagnitudeDiff = prevTouchDeltaMag - touchDeltaMag;
 
-             // ... change the orthographic size based on the change in distance between the touches.
-			DecoratorPanel.Instance.photoCamera.orthographicSize += deltaMagnitudeDiff * orthoZoomSpeed;
-
+            // ... change the orthographic size based on the change in distance between the touches.
             // Make sure the orthographic size never drops below zero.
-			DecoratorPanel.Instance.canvasCamera.orthographicSize = DecoratorPanel.Instance.photoCamera.orthographicSize = Mathf.Max(Camera.main.orthographicSize, 0.1f);
+            DecoratorPanel.Instance.orthoSizeInterpolator.targetValue = Mathf.Clamp(DecoratorPanel.Instance.orthoSizeInterpolator.targetValue + (deltaMagnitudeDiff * zoomSpeed), 1, DecoratorPanel.Instance.GetPixelBuffer().height * 2);
         }
     }
 	#endregion

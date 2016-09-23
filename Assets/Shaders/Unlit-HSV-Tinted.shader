@@ -93,7 +93,7 @@ Shader "Custom/Unlit-HSV-Tinted"
 				mask = mask / 9;
 
 				// Convert rgv to hsv
-				float3 hsv = rgb2hsv(tex);
+				fixed3 hsv = rgb2hsv(tex);
 
 				// Colorize
 				fixed3 result1 = (mask.r > 0) ? lerp(tex, _Color1.rgb * hsv.b, mask.r) : tex; 

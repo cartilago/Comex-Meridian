@@ -16,10 +16,18 @@ public class Menu : MonoBehaviour
 	{
 		ShowPanel(2);
 	}
-	#endregion
 
-	#region Class implementation
-	public void ShowPanel(int activeIndex)
+    void Update()
+    {
+        if (Input.GetKey(KeyCode.Escape))
+        {
+            Hide();
+        }
+    }
+    #endregion
+
+    #region Class implementation
+    public void ShowPanel(int activeIndex)
 	{
 		for (int i = 0; i < panels.Length; i++)
 		{

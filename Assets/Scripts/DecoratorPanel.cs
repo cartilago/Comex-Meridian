@@ -15,6 +15,7 @@ public class DecoratorPanel : Panel
     public Renderer photoRenderer;
     public Renderer canvasRenderer;
     public Texture2D startPhoto;
+    public GameObject progressIndicator;
 
     public Camera photoCamera;
     public Camera canvasCamera;
@@ -24,6 +25,7 @@ public class DecoratorPanel : Panel
     private Project currentProject;
     private int currentTouch;
     private bool mouseOrFingerDown;
+    public FloatSDInterpolator orthoSizeInterpolator = new FloatSDInterpolator(0.05f);
 
     private DrawingToolBase currentTool;
     private ColorBuffer32 pixelBuffer;
@@ -109,6 +111,11 @@ public class DecoratorPanel : Panel
             mouseOrFingerDown = false;
             currentTool.TouchUp(Input.mousePosition);
         }
+    }
+
+    private void LateUpdate()
+    {
+        canvasCamera.orthographicSize = photoCamera.orthographicSize = orthoSizeInterpolator.value;
     }
 
     private void Reset()
@@ -208,6 +215,8 @@ public class DecoratorPanel : Panel
 
         Vector2 p = photoCamera.ScreenToWorldPoint(new Vector3(Screen.width / 2, (topSectionScreenRect.yMax + bottomSectionScreenRect.yMin) / 2, 0));
        	photoRenderer.transform.position = new Vector3(0, -p.y, 0);
+
+        orthoSizeInterpolator.instantValue = photoCamera.orthographicSize;
     }
 
     public static Rect GetScreenRect(RectTransform rectTransform, Canvas canvas)
