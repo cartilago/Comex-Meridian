@@ -173,10 +173,12 @@ public class DecoratorPanel : Panel
 		pixelBuffer = new ColorBuffer32(photo.width, photo.height, photo.GetPixels32());
 	
         Texture oldtexture = photoRenderer.material.GetTexture("_MainTex");
-        Texture2D newTexture = new Texture2D(photo.width, photo.height);
+        Texture2D newTexture = new Texture2D(photo.width, photo.height, TextureFormat.RGB24, false);
 		newTexture.SetPixels32(pixelBuffer.data);
 		newTexture.Apply();
 		photoRenderer.material.SetTexture("_MainTex", newTexture);
+
+		//pixelBuffer.data = MedianFilter.Process(photo);
 
 		Debug.Log (string.Format("Pixel buffer size: {0}x{1}", newTexture.width, newTexture.height));
 

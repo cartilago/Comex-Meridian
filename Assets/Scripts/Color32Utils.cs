@@ -6,6 +6,7 @@
 /// </summary>
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public static class Color32Utils
 {
@@ -158,6 +159,52 @@ public static class Color32Utils
     
 		return new Color(Mathf.Abs(q.z + (q.w - q.y) / (6.0f * d + e)), d / (q.x + e), q.x, c.a);
 	}
+
+	public static ColorBuffer32 MedianFilter(ColorBuffer32 image, int size)
+    {
+		ColorBuffer32 newImage = new ColorBuffer32(image.width, image.height, new Color32[image.width * image.height]);
+
+		int apertureMin = -(size / 2);
+		int apertureMax = (size / 2);
+
+		for (int x = 0; x < newImage.width; ++x)
+		{
+			for (int y = 0; y < newImage.height; ++y)
+			{
+				List<byte> rValues = new List<byte>();
+				List<byte> gValues = new List<byte>();
+				List<byte> bValues = new List<byte>();
+
+				for (int x2 = apertureMin; x2 < apertureMax; ++x2)
+				{
+					int tempX = x + x2;
+
+					if (tempX >= 0 && tempX < newImage.width)
+					{
+						for (int y2 = apertureMin; y2 < apertureMax; ++y2)
+						{
+							int tempY = y + y2;
+
+							if (tempY >= 0 && tempY < newImage.height)
+							{
+								Color32 tempColor = image[tempX, tempY];
+								rValues.Add(tempColor.r);
+								gValues.Add(tempColor.g);
+								bValues.Add(tempColor.b);
+							}
+						}
+					}
+				}
+
+				rValues.Sort();
+				gValues.Sort();
+				bValues.Sort();
+				Color32 medianPixel = new Color32(rValues[rValues.Count / 2], gValues[gValues.Count / 2], bValues[bValues.Count / 2], (byte)255);
+				newImage[x, y] = medianPixel;
+			}
+		}
+		return newImage;
+	}
 }
 
 public class ColorBuffer32 : Object
@@ -167,6 +214,32 @@ public class ColorBuffer32 : Object
     public readonly int width;
 
     public ColorBuffer32(int width, int height, Color32[] colorData)
+    {
+        this.width = width;
+        this.height = height;
+        this.data = colorData;
+    }
+
+    public Color32 this[int x, int y]
+    {
+        get
+        {
+            return data[(y * width) + x];
+        }
+        set
+        {
+            data[(y * width) + x] = value;
+        }
+    }
+}
+
+public class ColorBuffer : Object
+{
+    public Color[] data;
+    public readonly int height;
+    public readonly int width;
+
+    public ColorBuffer(int width, int height, Color[] colorData)
     {
         this.width = width;
         this.height = height;

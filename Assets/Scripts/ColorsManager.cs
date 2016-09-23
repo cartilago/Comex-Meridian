@@ -56,16 +56,13 @@ public class ColorsManager : MonoSingleton<ColorsManager>
             go.GetComponent<Button>().onClick.AddListener(() =>  PickColorForCurrentColorButton(go));
             go.GetComponent<ColorWidget>().waitToShow = i * 0.05f;
             go.GetComponent<ColorWidget>().label.text = rows[0] + '\n' + rows[1];
-            //go.GetComponent<ColorWidget>().label.gameObject.SetActive(false);
-            go.GetComponent<Graphic>().color = CMYKToColor(float.Parse(rows[2]) * .01f,
-                                                           float.Parse(rows[3]) * .01f,
-                                                           float.Parse(rows[4]) * .01f, 
-                                                           float.Parse(rows[5]) * .01f);
+            go.GetComponent<Graphic>().color = CMYKToColor32(float.Parse(rows[2]), float.Parse(rows[3]), float.Parse(rows[4]), float.Parse(rows[5]));
         }
     }
 
-    public static Color32 CMYKToColor(float C, float M, float Y, float K)
+    public static Color32 CMYKToColor32(float C, float M, float Y, float K)
     {
+    	C*= .01f; M*= .01f; Y*=.01f; K*=.01f;
         byte r = (byte)(255 * (1 - C) * (1 - K));
         byte g = (byte)(255 * (1 - M) * (1 - K));
         byte b = (byte)(255 * (1 - Y) * (1 - K));
@@ -75,14 +72,24 @@ public class ColorsManager : MonoSingleton<ColorsManager>
 
     private void CreateCombinationWidgets(RectTransform t, GameObject prefab)
     {
+		// Read CMYK colors from text file;
+        string[] lines = colorCSVFile.text.Split("\n"[0]);
+
         for (int i = 0; i < colorWidgetCount; i++)
         {
             GameObject go = GameObject.Instantiate(prefab);
             go.transform.SetParent(t, false);
-            go.GetComponent<CombinationWidget>().color1 = new Color(Random.value, Random.value, Random.value);
-            go.GetComponent<CombinationWidget>().color2 = new Color(Random.value, Random.value, Random.value);
-            go.GetComponent<CombinationWidget>().color3 = new Color(Random.value, Random.value, Random.value);
-            colorWidgets.Add(go);
+			colorWidgets.Add(go);
+
+			string[] rows = lines[Random.Range(0,lines.Length-1)].Split(',');
+			go.GetComponent<CombinationWidget>().colorNames[0] = rows[0] + '\n' + rows[1];
+			go.GetComponent<CombinationWidget>().color1 = CMYKToColor32(float.Parse(rows[2]), float.Parse(rows[3]), float.Parse(rows[4]), float.Parse(rows[5]));
+			rows = lines[Random.Range(0,lines.Length-1)].Split(',');
+			go.GetComponent<CombinationWidget>().colorNames[1] = rows[0] + '\n' + rows[1];
+			go.GetComponent<CombinationWidget>().color2 = CMYKToColor32(float.Parse(rows[2]), float.Parse(rows[3]), float.Parse(rows[4]), float.Parse(rows[5]));
+			rows = lines[Random.Range(0,lines.Length-1)].Split(',');
+			go.GetComponent<CombinationWidget>().colorNames[2] = rows[0] + '\n' + rows[1];
+			go.GetComponent<CombinationWidget>().color3 = CMYKToColor32(float.Parse(rows[2]), float.Parse(rows[3]), float.Parse(rows[4]), float.Parse(rows[5]));
             go.GetComponent<Button>().onClick.AddListener(() => PickCombination(go));
             go.GetComponent<ColorWidgetBase>().waitToShow = i * 0.05f;
         }
@@ -175,6 +182,7 @@ public class ColorsManager : MonoSingleton<ColorsManager>
 		for (currentColor = 0; currentColor < colorButtons.Count; currentColor++)
         {
 			ColorWidget newColorWidget = Instantiate(colorWidgetPrefab).GetComponent<ColorWidget>();
+			newColorWidget.colorName = combinationWidget.GetComponent<CombinationWidget>().colorNames[currentColor];
 			newColorWidget.GetComponent<Graphic>().color = combinationWidget.GetComponent<CombinationWidget>().graphics[currentColor].color;
 			PickColorForCurrentColorButton(newColorWidget.gameObject);
        	}

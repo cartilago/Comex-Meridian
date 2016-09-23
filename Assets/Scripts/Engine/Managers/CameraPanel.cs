@@ -146,7 +146,7 @@ public class CameraPanel : Panel
         }
 
         // Set WebCam resolution, ensure to get a texture at least the double size of a screen
-        webCamTexture = new WebCamTexture(backCamName, Screen.width, Screen.height);//10000, 10000);//, Screen.width, Screen.height, 60);
+        webCamTexture = new WebCamTexture(backCamName, 10000, 10000);//10000, 10000);//, Screen.width, Screen.height, 60);
         webCamTexture.Play();
        
 		while ( webCamTexture.width < 100 )
@@ -154,6 +154,8 @@ public class CameraPanel : Panel
 			//Debug.Log("Still waiting another frame for correct info...");
 			yield return null;
 		}
+
+		Debug.Log(string.Format("WebcamTexture resolution {0}x{1}", webCamTexture.width, webCamTexture.height));
 
 		initializingMessage.gameObject.SetActive(false);
 		previewRenderer.gameObject.SetActive(true);
@@ -171,7 +173,8 @@ public class CameraPanel : Panel
 	        previewRenderer.transform.localScale = photoSize;
 			previewRenderer.material.SetTexture("_MainTex", webCamTexture);
 
-			Camera.main.orthographicSize = (photoSize.y / 2) * (screenAspectRatio / photoAspectRatio);
+			/*Camera.main.orthographicSize*/ 
+			DecoratorPanel.Instance.orthoSizeInterpolator.instantValue = (photoSize.y / 2) * (screenAspectRatio / photoAspectRatio);
 		}
 		else
 		{
@@ -186,7 +189,9 @@ public class CameraPanel : Panel
 
 			previewRenderer.material.SetTexture("_MainTex", webCamTexture);
 
-			Camera.main.orthographicSize = (photoSize.x / 2) * (screenAspectRatio / photoAspectRatio);
+			DecoratorPanel.Instance.orthoSizeInterpolator.instantValue = (photoSize.x / 2) * (screenAspectRatio / photoAspectRatio);
+
+			//Camera.main.orthographicSize = (photoSize.x / 2) * (screenAspectRatio / photoAspectRatio);
 		}
     }
 
@@ -208,14 +213,14 @@ public class CameraPanel : Panel
 
         if (photoAngle == 0)
         {
-            Texture2D texture = new Texture2D(webCamTexture.width, webCamTexture.height);
+            Texture2D texture = new Texture2D(webCamTexture.width, webCamTexture.height, TextureFormat.RGB24, false);
             texture.SetPixels32(photoBuffer);
             texture.Apply();
             DecoratorPanel.Instance.SetPhoto(texture);
         }
         else
         {
-            Texture2D texture = new Texture2D(webCamTexture.height, webCamTexture.width);
+            Texture2D texture = new Texture2D(webCamTexture.height, webCamTexture.width, TextureFormat.RGB24, false);
             photoBuffer = Color32Utils.RotateColorArrayLeft(photoBuffer, webCamTexture.width, webCamTexture.height);
             texture.SetPixels32(photoBuffer);
             texture.Apply();

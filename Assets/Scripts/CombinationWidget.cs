@@ -7,6 +7,8 @@ public class CombinationWidget : ColorWidgetBase
     #region Class members
     public Graphic buttonGraphic;
     public Graphic[] graphics;
+
+    public string[] colorNames = new string[3];
     #endregion
 
     #region Class accessors

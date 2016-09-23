@@ -60,6 +60,7 @@ public class PaintTool : DrawingToolBase
         else
         {
             Stroke(masksPixelBuffer, ColorsManager.Instance.GetCurrentColor());
+			UpdateMaskPixels();
         }
 		strokePoints.Clear();
     }
@@ -136,7 +137,7 @@ public class PaintTool : DrawingToolBase
 	
 		if (ColorTest(pixel, currentColor, startColor, 1) == true)
         {
-            	currentColor = pixel;
+        	currentColor = pixel;
          	copyBmp[x, y] = Color.black;
            	masksBuffer[x, y] = maskColor;
 			openNodes.Enqueue(new Point(x, y, currentColor));
