@@ -1,11 +1,11 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-static public class MedianFilter 
+static public class BilateralFilterTexture 
 {
 	static public Color32[] Process(Texture2D texture)
 	{
-		Material material = new Material (Shader.Find("Median5x5"));
+		Material material = new Material (Shader.Find("BilateralFilter"));
 
 		RenderTexture renderTexture = RenderTexture.GetTemporary(texture.width, texture.height);
 		Graphics.Blit(texture, renderTexture, material);
