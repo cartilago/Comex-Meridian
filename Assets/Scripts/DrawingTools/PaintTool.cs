@@ -85,7 +85,7 @@ public class PaintTool : DrawingToolBase
     #region Class implementation
     static public void ReleaseMemory()
     {
-        	DestroyImmediate(masksTexture);
+       DestroyImmediate(masksTexture);
 		DestroyImmediate(masksPixelBuffer);
 		Resources.UnloadUnusedAssets(); 
 		System.GC.Collect();
@@ -135,9 +135,9 @@ public class PaintTool : DrawingToolBase
     {
 		Color32 pixel = copyBmp[x , y];
 	
-		if (ColorTest(pixel, currentColor, startColor, 0.5f) == true)
+		if (ColorTest(pixel, currentColor, startColor, 1) == true)
         {
-            	currentColor = pixel;
+            currentColor = pixel;
          	copyBmp[x, y] = Color.black;
            	masksBuffer[x, y] = maskColor;
 			openNodes.Enqueue(new Point(x, y, currentColor));

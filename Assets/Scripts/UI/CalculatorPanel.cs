@@ -24,6 +24,8 @@ public class CalculatorPanel : Panel
 	void OnEnable()
 	{
 		projectName.text = DecoratorPanel.Instance.GetCurrentProject().name;
+		resultPanel.SetActive(false);
+	
 	}
 	#endregion
 
@@ -31,6 +33,11 @@ public class CalculatorPanel : Panel
 	#endregion
 
 	#region Class implementation
+	public void HideTotal()
+	{
+		resultPanel.SetActive(false);
+	}
+
 	public void GetTotal()
     {
         float h = 0;
@@ -42,7 +49,9 @@ public class CalculatorPanel : Panel
         int wc = 0;
         int.TryParse(windowCount.text, out wc);
 
-        resultText.text = string.Format("Necesitarás {0:0.00} lts", ((h * w * .0909f) - (wc * .02f)).ToString());
+        float squareMeters = (w * h) - wc;
+
+        resultText.text = string.Format("Necesitarás {0:0.00} lts", (squareMeters * .0909f).ToString());
 
         resultPanel.SetActive(true);
     }

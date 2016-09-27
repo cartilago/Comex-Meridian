@@ -178,7 +178,7 @@ public class DecoratorPanel : Panel
 		newTexture.Apply();
 		photoRenderer.material.SetTexture("_MainTex", newTexture);
 
-		pixelBuffer.data = BilateralFilterTexture.Process(photo);
+		//pixelBuffer.data = BilateralFilterTexture.Process(photo);
 
 		Debug.Log (string.Format("Pixel buffer size: {0}x{1}", newTexture.width, newTexture.height));
 
