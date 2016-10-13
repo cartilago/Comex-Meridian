@@ -12,6 +12,14 @@ public class MeridianData
         public string Latitud;
         public string Longitud;
         public string Determinante;
+
+        public Vector2 coordinates
+        {
+            get
+            {
+                return new Vector2(float.Parse(Longitud), float.Parse(Latitud));
+            }
+        }
     }
 
     [System.Serializable]
