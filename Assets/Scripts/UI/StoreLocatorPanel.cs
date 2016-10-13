@@ -19,6 +19,7 @@ public class StoreLocatorPanel : Panel
     public Text[] closestStoreDistances;
     private MeridianData.Stores stores;
     private Vector2 userCoordinates;
+    private int startZoom = 15;
     #endregion
 
     #region MonoBehaviour overrides
@@ -33,6 +34,8 @@ public class StoreLocatorPanel : Panel
             MeridianApp.Instance.GetStoresCatalog(GetStoresCatalogDelegate);
 
             OnlineMapsLocationService locationService = OnlineMapsLocationService.instance;
+
+            startZoom = OnlineMaps.instance.zoom;
 
             if (locationService != null)
             {
@@ -52,6 +55,12 @@ public class StoreLocatorPanel : Panel
     #endregion
 
     #region Class implementation
+    public void ResetView()
+    {
+        OnlineMaps.instance.position = userCoordinates;
+        OnlineMaps.instance.zoom = startZoom;
+    }
+
     private void GetStoresCatalogDelegate(MeridianData.Stores inStores)
     {
         if (inStores != null)
