@@ -1,8 +1,8 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
-using System.Collections;
+using Meridian.Framework.Utils;
 
-public class Menu : MonoBehaviour 
+public class Menu : MonoSingleton<Menu> 
 {
 	#region Class members
 	public Panel[] panels;
@@ -14,7 +14,7 @@ public class Menu : MonoBehaviour
 	#region MonoBehaviour overrides
 	private void Start()
 	{
-		ShowPanel(2);
+		ShowPanel(0);
 	}
 
     void Update()

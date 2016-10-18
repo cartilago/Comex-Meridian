@@ -1,8 +1,36 @@
 ﻿using UnityEngine;
-using System.Collections;
 
 public class MeridianData
 {
+    [System.Serializable]
+    public class UserLoginResult
+    {
+        public UserLogin[] userList;
+    }
+
+    [System.Serializable]
+    public class UserLogin
+    {
+        public int Estatus;
+        public string Token;
+        public string Msj;
+    }
+
+    [System.Serializable]
+    public class RegisterUserResult
+    {
+        public RegisterUser[] registerUserList;
+    }
+
+    [System.Serializable]
+    public class RegisterUser
+    {
+        public int ID;
+        public int Estatus;
+        public string Token;
+        public string Msj;
+    }
+
     [System.Serializable]
     public class Store
     {

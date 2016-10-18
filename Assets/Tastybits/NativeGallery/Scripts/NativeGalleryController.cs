@@ -75,7 +75,7 @@ namespace Tastybits.NativeGallery {
 				GameObject.DestroyImmediate (this.gameObject);
 				return;
 			}
-			Object.DontDestroyOnLoad (this.gameObject);
+			//Object.DontDestroyOnLoad (this.gameObject);
 			if( _instance == null ) {
 				_instance=this;
 			}

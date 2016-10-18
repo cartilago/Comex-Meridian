@@ -1,25 +1,65 @@
 ﻿/// <summary>
 /// About panel.
-/// Provides functionalty for showing the about panel.
+/// Provides functionalty for userregistration panel.
 ///
 /// Created by Jorge L. Chavez Herrera.
 /// </summary>
 using UnityEngine;
 using UnityEngine.UI;
-using System.Collections;
 
 
 public class RegisterPanel : Panel 
 {
-	#region Class members
-	#endregion
+    #region Class members
+    public InputField userField;
+    public InputField emailField;
+    public InputField passwordField;
+    public InputField confirmPasswordField;
+    public GameObject resultPanel;
+    public Text resultLabel;
+    #endregion
 
-	#region MonoBehaviour overrides
-	#endregion
+    #region MonoBehaviour overrides
+    private void OnEnable()
+    {
+        HideAlert();
+    }
 
-	#region Panel overrides
-	#endregion
+    #endregion
 
-	#region Class implementation
-	#endregion
+    #region Panel overrides
+    #endregion
+
+    #region Class implementation public 
+    public void RegisterUser()
+    {
+        resultPanel.gameObject.SetActive(false);
+        MeridianApp.Instance.RegisterUser(MeridianApp.adminUser.Token, "admin", userField.text, emailField.text, passwordField.text, RegisterUser);
+    }
+
+    private void RegisterUser(MeridianData.RegisterUserResult registerUserResult)
+    {
+        if (registerUserResult != null)
+        {
+            resultLabel.text = registerUserResult.registerUserList[0].Msj;
+            resultPanel.gameObject.SetActive(true);
+
+            if (registerUserResult.registerUserList[0].Estatus == 1)
+            {
+                Invoke("ShowLogin", 2);
+            }
+        }
+    }
+
+    private void ShowLogin()
+    {
+        Menu.Instance.ShowPanel(0);
+    }
+
+    public void HideAlert()
+    {
+        resultPanel.gameObject.SetActive(false);
+    }
+
+    #endregion
 }

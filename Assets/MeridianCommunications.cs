@@ -27,43 +27,35 @@ public class MeridianCommunications : MonoSingleton<MeridianCommunications>
 	{
 		get 
 		{
-            return "http://app-decorador-meridian.azurewebsites.net/api/";
+            return "http://app-decorador-meridian.azurewebsites.net/api";
 		} 
 	}
 	#endregion
 		
 	#region Class implementation
-	/// <summary>
+    /// <summary>
 	/// Sends a POST message to the specified URL
 	/// </summary>
 	/// <param name="url">URL.</param>
 	/// <param name="post">Post.</param>
-	static public WWW POST (string url, Dictionary<string,string> post)
-	{
-		WWWForm form = new WWWForm ();
-		Dictionary<string,string> headers = new Dictionary<string, string>();
-		headers [REST_WS_HEADER] = REST_WS_HEADER_TYPE;
+    static public WWW POST(string url,string jsonString)
+    {
+        System.Text.Encoding encoding = new System.Text.UTF8Encoding();
+        Dictionary<string, string> postHeader = new Dictionary<string, string>();
 
-		if (post != null)
-		{
-			foreach (KeyValuePair<string,string> post_arg in post)
-			{
-				form.AddField (post_arg.Key, post_arg.Value);
-			}
-		}
-			
-		byte[] rawData = form.data;	
-		WWW www = new WWW (currentURL + url, rawData, headers);
-		Instance.StartCoroutine (WaitForRequest(www));
-			
-		return www; 
-	}
-		
-	/// <summary>
-	/// Sends a GET message to the specified URL (The WWW class will use GET by default and POST if you supply a postData parameter).
-	/// </summary>
-	/// <param name="url">URL.</param>
-	static public WWW GET (string url)
+        postHeader.Add("Content-Type", "text/json");
+
+        WWW www = new WWW(currentURL + url, encoding.GetBytes(jsonString), postHeader);
+        Instance.StartCoroutine(WaitForRequest(www));
+
+        return www;
+    }
+
+    /// <summary>
+    /// Sends a GET message to the specified URL (The WWW class will use GET by default and POST if you supply a postData parameter).
+    /// </summary>
+    /// <param name="url">URL.</param>
+    static public WWW GET (string url)
 	{	
 		Dictionary<string,string> headers = new Dictionary<string, string>();
 		headers [REST_WS_HEADER] = REST_WS_HEADER_TYPE;
