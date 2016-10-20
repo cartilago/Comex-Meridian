@@ -142,7 +142,6 @@ public class DecoratorPanel : Panel
         if (projectMask != null)
             FingerCanvas.Instance.SetContents(projectMask);
 
-
         ColorsManager.Instance.SetColorsForButtons(currentProject.colors, currentProject.colorNames);
     }
 

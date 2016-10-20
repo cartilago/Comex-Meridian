@@ -68,7 +68,7 @@ public class CameraPanel : Panel
     {
 		previewRenderer.gameObject.SetActive(false);
 		initializingMessage.SetActive(true);
-		DecoratorPanel.Instance.ResetView();
+		
 
         // Start WebCam
         if (aurhorizationStatus == WebCamAuthorizationStatus.Off || aurhorizationStatus == WebCamAuthorizationStatus.Denied)
@@ -92,6 +92,7 @@ public class CameraPanel : Panel
 			previewRenderer.material.SetTexture("_MainTex", webCamTexture);
         }
 
+        DecoratorPanel.Instance.ResetView();
         decorator.Hide();
     }
 
@@ -102,8 +103,8 @@ public class CameraPanel : Panel
         {
             webCamTexture.Pause();
         }
+        previewRenderer.gameObject.SetActive(false);
 
-		previewRenderer.gameObject.SetActive(false);
         decorator.Show();
     }
 
@@ -206,28 +207,53 @@ public class CameraPanel : Panel
     {
         Color32[] photoBuffer = null;
 
+        yield return null;
+
         photoBuffer = webCamTexture.GetPixels32();
+        int width = webCamTexture.width;
+        int height = webCamTexture.height;
+
+        // Apply device orientation
+        if (Input.deviceOrientation == DeviceOrientation.LandscapeLeft)
+        {
+            photoBuffer = Color32Utils.RotateColorArrayRight(photoBuffer, width, height);
+            int temp = width;
+            width = height;
+            height = temp;
+        }
+        else if (Input.deviceOrientation == DeviceOrientation.LandscapeRight)
+        {
+            photoBuffer = Color32Utils.RotateColorArrayLeft(photoBuffer, width, height);
+            int temp = width;
+            width = height;
+            height = temp;
+        }
+        else if (Input.deviceOrientation == DeviceOrientation.PortraitUpsideDown)
+        {
+            photoBuffer = Color32Utils.RotateColorArrayRight(photoBuffer, width, height);
+            photoBuffer = Color32Utils.RotateColorArrayRight(photoBuffer, height, width);
+        }
+
         photoSFX.Play(cachedAudioSource);
 
-        Debug.Log(string.Format("WebcamTexture size {0}x{1}", webCamTexture.width, webCamTexture.height));
+        Debug.Log(string.Format("WebcamTexture size {0}x{1}", width, height));
 
         if (photoAngle == 0)
         {
-            Texture2D texture = new Texture2D(webCamTexture.width, webCamTexture.height, TextureFormat.RGB24, false);
+            Texture2D texture = new Texture2D(width, height, TextureFormat.RGB24, false);
             texture.SetPixels32(photoBuffer);
             texture.Apply();
             DecoratorPanel.Instance.SetPhoto(texture);
         }
         else
         {
-            Texture2D texture = new Texture2D(webCamTexture.height, webCamTexture.width, TextureFormat.RGB24, false);
-            photoBuffer = Color32Utils.RotateColorArrayLeft(photoBuffer, webCamTexture.width, webCamTexture.height);
+            Texture2D texture = new Texture2D(height, width, TextureFormat.RGB24, false);
+            photoBuffer = Color32Utils.RotateColorArrayLeft(photoBuffer, width, height);
             texture.SetPixels32(photoBuffer);
             texture.Apply();
             DecoratorPanel.Instance.SetPhoto(texture);
         }
 
-        yield return new WaitForSeconds(1);
         decorator.Show();
         gameObject.SetActive(false);
     }

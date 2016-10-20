@@ -11,15 +11,28 @@ using System.Collections;
 
 public class SettingsPanel : Panel 
 {
-	#region Class members
-	#endregion
+    #region Class members
+    public Text nameLabel;
+    public Text emailLabel;
+    #endregion
 
-	#region MonoBehaviour overrides
-	#endregion
+    #region MonoBehaviour overrides
+    private void OnEnable()
+    {
+        emailLabel.text = Menu.Instance.panels[0].GetComponent<LoginPanel>().userField.text;
+    }
 
-	#region Panel overrides
-	#endregion
 
-	#region Class implementation
+    #endregion
+
+    #region Panel overrides
+    #endregion
+
+    #region Class implementation
+    public void Logout()
+    {
+        emailLabel.text = Menu.Instance.panels[0].GetComponent<LoginPanel>().userField.text = "";
+    }
+
 	#endregion
 }
