@@ -56,11 +56,13 @@ public class PaintTool : DrawingToolBase
 
         // Do a flood fill only when the stroke is really short, (Tapping)
         if (GetStrokeRadius(strokePoints) < 10)
+           // FloodFillScanLine(startCanvasPosition, maskColors[ColorsManager.Instance.GetCurrentColor()], 0.2f, 0.35f, 0.025f, picelBuffer, masksPixelBuffer);
+
             StartCoroutine(FloodFill(startCanvasPosition, maskColors[ColorsManager.Instance.GetCurrentColor()], 0.2f, 0.35f, 0.025f, picelBuffer, masksPixelBuffer));
         else
         {
             Stroke(masksPixelBuffer, ColorsManager.Instance.GetCurrentColor());
-			UpdateMaskPixels();
+            UpdateMaskPixels();
         }
 		strokePoints.Clear();
     }
@@ -187,90 +189,109 @@ public class PaintTool : DrawingToolBase
         return true;
     }
 
-    private void FloodFillScanLine(Vector2 startPos, Color maskColor, float hueTolerance, float saturationTolerance, float valueTolerance, ColorBuffer32 pixelBuffer, ColorBuffer32 masksBuffer)
+    public static bool ColorTest2(Color32 c1, Color32 c2, Color32 startColor, float tol)
     {
-        Color32 startColor = pixelBuffer[(int)startPos.x, (int)startPos.y];
-        Color32 currentColor = startColor;
-        Debug.Log(HSVColor.FromColor(startColor).ToString());
+        /*
+        //Those values you can just divide by the amount of difference saturations (255), and you will get the difference between the two.
+        float diffRed = Mathf.Abs(c1.r - c2.r) / 255f;
+        float diffGreen = Mathf.Abs(c1.g - c2.g) / 255f;
+        float diffBlue = Mathf.Abs(c1.b - c2.b) / 255f;
 
-        Point start = new Point((int)startPos.x, (int)startPos.y, startColor);
+        //After which you can just find the average color difference in percentage.
+        float diffPercentage = (diffRed + diffGreen + diffBlue) / 3 * 100;
 
+        if (diffPercentage >= tol)
+        {
+            return false;
+        }
+        else
+        {*/
+            // Do HSV comparsion
+            HSVColor color1 = HSVColor.FromRGBA(c1.r / 255f, c1.g / 255f, c1.b / 255f, 1);
+            HSVColor color2 = HSVColor.FromRGBA(startColor.r / 255f, startColor.g / 255f, startColor.b / 255f, 1);
+
+            // Only for highly saturated colors
+           // if (Mathf.Abs(color1.s - color2.s) > 0.5f)
+
+        if (Mathf.Abs(color1.h - color2.h) > 0.05f)
+               return false;
+
+        if (Mathf.Abs(color1.s - color2.s) > 0.1f)
+            return false;
+            //  }
+
+        return true;
+    }
+
+   
+
+    void FloodFillScanLine(Vector2 startPos, Color maskColor, float hueTolerance, float saturationTolerance, float valueTolerance, ColorBuffer32 pixelBuffer, ColorBuffer32 masksBuffer)
+    {
+        Color32 targetColor = pixelBuffer[(int)startPos.x, (int)startPos.y];
+        Point start = new Point((int)startPos.x, (int)startPos.y, targetColor);
         ColorBuffer32 copyBmp = new ColorBuffer32(pixelBuffer.width, pixelBuffer.height, (Color32[])pixelBuffer.data.Clone());
 
-        copyBmp[start.x, start.y] = maskColor;
+        Stack<Point> pixels = new Stack<Point>();
+        pixels.Push(start);
 
-        Queue<Point> openNodes = new Queue<Point>();
-        openNodes.Enqueue(start);
+        float tolerance = 0.5f;
 
-        while (openNodes.Count > 0)
+        while (pixels.Count != 0)
         {
-            Point current = openNodes.Dequeue();
-            currentColor = current.color;
+            Point temp = pixels.Pop();
+            int y1 = temp.y;
 
-            for (int x = 0; x < pixelBuffer.width; x++)
+            while (y1 >= 0 && ColorTest2(copyBmp[temp.x, y1], targetColor, targetColor, tolerance) == true)
             {
-                Color32 pixel = copyBmp[x, current.y];
-
-                if (ColorTest(pixel, currentColor, startColor, 1) == false || masksBuffer[x, current.y] == maskColor)
-                    break;
-                
-                copyBmp[x, current.y] = Color.black;
-                masksBuffer[x, current.y] = maskColor;
-        /*
-                // down
-                if (current.y + 1 < pixelBuffer.height)
-                {
-                    pixel = copyBmp[x, current.y+1];
-
-                    if (ColorTest(pixel, currentColor, startColor, 1) == true && masksBuffer[x, current.y+1] != maskColor)
-                        openNodes.Enqueue(new Point(x, current.y + 1));
-                }
-        
-                if (current.y - 1 >= 0)
-                {
-                    pixel = copyBmp[x, current.y - 1];
-
-                    if (ColorTest(pixel, currentColor, startColor, 1) == true && masksBuffer[x, current.y-1] != maskColor)
-                        openNodes.Enqueue(new Point(x, current.y - 1));
-                }*/
+                y1--;
             }
 
-            for (int x = current.x -1; x >= 0; x--)
+            y1++;
+
+            bool spanLeft = false;
+            bool spanRight = false;
+
+            while (y1 < pixelBuffer.height && ColorTest2(copyBmp[temp.x, y1], targetColor, targetColor, tolerance) == true)
             {
-                Color32 pixel = copyBmp[x, current.y];
+                copyBmp[temp.x, y1] = Color.black;
+                masksBuffer[temp.x, y1] = maskColor;
 
-                if (ColorTest(pixel, currentColor, startColor, 1) == false || masksBuffer[x, current.y] == maskColor)
-                    break;
-
-                copyBmp[x, current.y] = Color.black;
-                masksBuffer[x, current.y] = maskColor;
-                /*
-                // down
-                if (current.y + 1 < pixelBuffer.height)
+                // Span left
+                if (spanLeft == false && temp.x > 0 && ColorTest2(copyBmp[temp.x - 1, y1], targetColor, targetColor, tolerance) == true)
                 {
-                    pixel = copyBmp[x, current.y + 1];
-
-                    if (ColorTest(pixel, currentColor, startColor, 1) == true && masksBuffer[x, current.y + 1] != maskColor)
-                        openNodes.Enqueue(new Point(x, current.y + 1));
+                    pixels.Push(new Point(temp.x - 1, y1));
+                    spanLeft = true;
+                }
+                else if (spanLeft == true && temp.x > 0 && ColorTest2(copyBmp[temp.x - 1, y1], targetColor, targetColor, tolerance) != true)
+                {
+                    spanLeft = false;
                 }
 
-                if (current.y - 1 >= 0)
+                // Span right
+                if (spanRight == false && temp.x < pixelBuffer.width - 1 && ColorTest2(copyBmp[temp.x + 1, y1], targetColor, targetColor, tolerance) == true)
                 {
-                    pixel = copyBmp[x, current.y - 1];
+                    pixels.Push(new Point(temp.x + 1, y1));
+                    spanRight = true;
+                }
+                else if (spanRight == true && temp.x < pixelBuffer.width - 1 && ColorTest2(copyBmp[temp.x + 1, y1], targetColor, targetColor, tolerance) != true)
+                {
+                    spanRight = false;
+                }
 
-                    if (ColorTest(pixel, currentColor, startColor, 1) == true && masksBuffer[x, current.y - 1] != maskColor)
-                        openNodes.Enqueue(new Point(x, current.y - 1));
-                }*/
+                y1++;
             }
         }
 
-       
+        UpdateMaskPixels();
+        DecoratorPanel.Instance.progressIndicator.SetActive(false);
     }
 
-
+    private float startTime;
 
     IEnumerator FloodFill(Vector2 startPos, Color maskColor, float hueTolerance, float saturationTolerance, float valueTolerance, ColorBuffer32 pixelBuffer, ColorBuffer32 masksBuffer)
     {
+        startTime = Time.time;
+
         DecoratorPanel.Instance.progressIndicator.SetActive(true);
         yield return new WaitForEndOfFrame();
         yield return null;
@@ -302,21 +323,23 @@ public class PaintTool : DrawingToolBase
             int y = current.y;
             Color32 currentColor = current.color;
            
-            if (x > 0 && masksBuffer[x - 1, y] != maskColor)
+            if (x > 0 && copyBmp[x - 1, y] != Color.black && masksBuffer[x - 1, y] != maskColor)
                 ProcessPixel(x - 1, y, ref currentColor, startColor, maskColor, hueTolerance, saturationTolerance, valueTolerance, openNodes, pixelBuffer, masksBuffer, copyBmp);
               
-            if (x < pixelBuffer.width - 1 && masksBuffer[x+1,y] != maskColor)
+            if (x < pixelBuffer.width - 1 && copyBmp[x + 1, y] != Color.black && masksBuffer[x+1,y] != maskColor)
                 ProcessPixel(x + 1, y, ref currentColor, startColor, maskColor, hueTolerance, saturationTolerance, valueTolerance, openNodes, pixelBuffer, masksBuffer, copyBmp);
           
-            if (y > 0 && masksBuffer[x, y-1] != maskColor)
+            if (y > 0 && copyBmp[x, y - 1] != Color.black && masksBuffer[x, y-1] != maskColor)
                 ProcessPixel(x, y - 1, ref currentColor, startColor, maskColor, hueTolerance, saturationTolerance, valueTolerance, openNodes, pixelBuffer, masksBuffer, copyBmp);
               
-            if (y < pixelBuffer.height - 1 && masksBuffer[x, y + 1] != maskColor)
+            if (y < pixelBuffer.height - 1 && copyBmp[x, y + 1] != Color.black && masksBuffer[x, y + 1] != maskColor)
                 ProcessPixel(x, y + 1, ref currentColor, startColor, maskColor, hueTolerance, saturationTolerance, valueTolerance, openNodes, pixelBuffer, masksBuffer, copyBmp);
         }
 
         UpdateMaskPixels();
         DecoratorPanel.Instance.progressIndicator.SetActive(false);
+
+        Debug.Log(Time.time - startTime);
     }
 
     private struct Point

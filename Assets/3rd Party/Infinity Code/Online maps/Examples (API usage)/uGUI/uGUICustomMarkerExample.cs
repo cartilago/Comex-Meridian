@@ -1,13 +1,13 @@
 ﻿/*     INFINITY CODE 2013-2016      */
 /*   http://www.infinity-code.com   */
 
-#if !UNITY_4_3 && !UNITY_4_5
+//#if !UNITY_4_3 && !UNITY_4_5
 
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace InfinityCode.OnlineMapsExamples
-{
+//namespace InfinityCode.OnlineMapsExamples
+//{
     [AddComponentMenu("")]
     public class uGUICustomMarkerExample:MonoBehaviour
     {
@@ -28,6 +28,6 @@ namespace InfinityCode.OnlineMapsExamples
             textField.text = text;
         }
     }
-}
+//}
 
-#endif
+//#endif

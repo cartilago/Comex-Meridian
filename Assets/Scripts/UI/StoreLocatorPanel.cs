@@ -71,6 +71,8 @@ public class StoreLocatorPanel : Panel
             {
                 OnlineMapsMarker marker = OnlineMaps.instance.AddMarker(float.Parse(store.Longitud), float.Parse(store.Latitud), store.Tienda.TrimEnd());
                 marker.scale = 0.5f;
+
+               // uGUICustomMarkerEngineExample.AddMarker(float.Parse(store.Longitud), float.Parse(store.Latitud), store.Tienda.TrimEnd());
             }
 
             Debug.Log(inStores.storeList.Length + " Stores got");

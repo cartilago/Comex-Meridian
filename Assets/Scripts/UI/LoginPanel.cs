@@ -46,6 +46,7 @@ public class LoginPanel : Panel
         {
             if (loginResult.userList[0].Estatus == 1)
             {
+                MeridianApp.SetCurrentUser(loginResult.userList[0]);
                 EnterDecorator();
             }
             else

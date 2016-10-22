@@ -41,6 +41,9 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
 			{
 				if (_renderTexture.width != (int)canvasRenderer.transform.localScale.x || _renderTexture.height != (int)canvasRenderer.transform.localScale.y)
 				{
+                    if (RenderTexture.active == _renderTexture)
+                        RenderTexture.active = null;
+
 					DestroyImmediate(_renderTexture);
 					_renderTexture = new RenderTexture((int)canvasRenderer.transform.localScale.x, (int)canvasRenderer.transform.localScale.y, 0);
 					newTexture = true;

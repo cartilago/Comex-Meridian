@@ -14,6 +14,7 @@ public class MeridianData
         public int Estatus;
         public string Token;
         public string Msj;
+        public string UserName;
     }
 
     [System.Serializable]

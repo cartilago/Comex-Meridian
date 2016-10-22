@@ -19,10 +19,12 @@ public class SettingsPanel : Panel
     #region MonoBehaviour overrides
     private void OnEnable()
     {
-        emailLabel.text = Menu.Instance.panels[0].GetComponent<LoginPanel>().userField.text;
+        if (MeridianApp.currentUser != null)
+        {
+            nameLabel.text = MeridianApp.currentUser.UserName;
+            emailLabel.text = Menu.Instance.panels[0].GetComponent<LoginPanel>().userField.text;
+        }
     }
-
-
     #endregion
 
     #region Panel overrides
@@ -31,6 +33,8 @@ public class SettingsPanel : Panel
     #region Class implementation
     public void Logout()
     {
+        MeridianApp.SetCurrentUser(null);
+        nameLabel.text = "";
         emailLabel.text = Menu.Instance.panels[0].GetComponent<LoginPanel>().userField.text = "";
     }
 

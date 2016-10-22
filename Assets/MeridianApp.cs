@@ -38,6 +38,11 @@ public class MeridianApp : MonoSingleton<MeridianApp>
     #endregion
 
     #region Internet connection
+    static public void SetCurrentUser(MeridianData.UserLogin user)
+    {
+        _currentUser = user;
+    }
+
     private void InternetOk()
     {
         _internetAvailable = true;
@@ -83,7 +88,7 @@ public class MeridianApp : MonoSingleton<MeridianApp>
     private IEnumerator UserLoginCoroutine(string user, string password, SimpleDelegate<MeridianData.UserLoginResult> userLoginDelegate)
     {
         // Build json by hand
-        string jsonString = "{ mail:'" + user + "', password:" + password + " }";
+        string jsonString = "{ mail:'" + user + "', password:'" + password + "' }";
 
         WWW www = MeridianCommunications.POST("/Catalog/Login", jsonString);
 

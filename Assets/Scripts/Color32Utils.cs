@@ -220,7 +220,7 @@ public class ColorBuffer32 : Object
         this.data = colorData;
     }
 
-    public Color32 this[int x, int y]
+    public Color this[int x, int y]
     {
         get
         {
