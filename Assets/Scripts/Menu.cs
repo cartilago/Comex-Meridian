@@ -9,6 +9,7 @@ public class Menu : MonoSingleton<Menu>
 	public GameObject[] menuHighlights;
     public GameObject fader;
     public GameObject slideMenuRoot;
+    public GameObject settingsButton;
 	#endregion
 
 	#region MonoBehaviour overrides
@@ -40,6 +41,7 @@ public class Menu : MonoSingleton<Menu>
 
     public void Show()
     {
+        settingsButton.SetActive(MeridianApp.currentUser != null);
         slideMenuRoot.GetComponentInChildren<TweenTransform>(true).TweenIn();
         fader.GetComponentInChildren<TweenColor>(true).TweenIn();
         fader.GetComponentInChildren<MaskableGraphic>(true).raycastTarget = true;

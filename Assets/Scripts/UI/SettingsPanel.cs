@@ -23,6 +23,7 @@ public class SettingsPanel : Panel
         {
             nameLabel.text = MeridianApp.currentUser.UserName;
             emailLabel.text = Menu.Instance.panels[0].GetComponent<LoginPanel>().userField.text;
+
         }
     }
     #endregion
