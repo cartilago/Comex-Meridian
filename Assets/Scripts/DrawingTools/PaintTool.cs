@@ -174,6 +174,7 @@ public class PaintTool : DrawingToolBase
         }
     }
 
+    /*
     public static bool ColorTestHSV(Color32 c1, Color32 c2, Color32 startColor, float tol)
     {
         //Those values you can just divide by the amount of difference saturations (255), and you will get the difference between the two.
@@ -187,7 +188,7 @@ public class PaintTool : DrawingToolBase
         // TODO
 
         return true;
-    }
+    }*/
 
     public static bool ColorTest2(Color32 c1, Color32 c2, Color32 startColor, float tol)
     {

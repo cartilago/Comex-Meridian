@@ -56,6 +56,11 @@ public class MeridianApp : MonoSingleton<MeridianApp>
         _internetAvailable = false;
     }
 
+    public bool IsInternetAvailable()
+    {
+        return _internetAvailable;
+    }
+
     private void GetAdminUser()
     {
         UserLogin("admin", "123", GetAdminUserDelegate);
