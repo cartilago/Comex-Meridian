@@ -21,6 +21,6 @@ public class DrawingToolBase : MonoBehaviour
 
     virtual public void TouchUp(Vector2 pos) { }
 
-    virtual public void Update() {}
+    virtual public void DoUpdate() {}
     #endregion
 }

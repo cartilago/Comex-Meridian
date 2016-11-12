@@ -56,7 +56,7 @@ public class PaintTool : DrawingToolBase
 
         // Do a flood fill only when the stroke is really short, (Tapping)
         if (GetStrokeRadius(strokePoints) < 10)
-           // FloodFillScanLine(startCanvasPosition, maskColors[ColorsManager.Instance.GetCurrentColor()], 0.2f, 0.35f, 0.025f, picelBuffer, masksPixelBuffer);
+            //FloodFillScanLine(startCanvasPosition, maskColors[ColorsManager.Instance.GetCurrentColor()], 0.2f, 0.35f, 0.025f, picelBuffer, masksPixelBuffer);
 
             StartCoroutine(FloodFill(startCanvasPosition, maskColors[ColorsManager.Instance.GetCurrentColor()], 0.2f, 0.35f, 0.025f, picelBuffer, masksPixelBuffer));
         else
@@ -173,22 +173,6 @@ public class PaintTool : DrawingToolBase
             return true;
         }
     }
-
-    /*
-    public static bool ColorTestHSV(Color32 c1, Color32 c2, Color32 startColor, float tol)
-    {
-        //Those values you can just divide by the amount of difference saturations (255), and you will get the difference between the two.
-        HSVColor hsv1 = HSVColor.FromRGBA(c1.r / 255f, c1.g / 255f, c1.b / 255f, 1);
-        HSVColor hsv2 = HSVColor.FromRGBA(c2.r / 255f, c2.g / 255f, c2.b / 255f, 1);
-
-        float diffHue = Mathf.Abs(hsv1.h - hsv2.h);
-        float diffSat = Mathf.Abs(hsv1.s - hsv2.s);
-        float diffVal = Mathf.Abs(hsv1.v - hsv2.v);
-
-        // TODO
-
-        return true;
-    }*/
 
     public static bool ColorTest2(Color32 c1, Color32 c2, Color32 startColor, float tol)
     {

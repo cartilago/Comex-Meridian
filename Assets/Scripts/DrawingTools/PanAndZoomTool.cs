@@ -34,7 +34,7 @@ public class PanAndZoomTool : DrawingToolBase
 		zooming = false;
 	}
 
-    override public void Update()
+    override public void DoUpdate()
 	{
         // If there are two touches on the device...
         if (Input.touchCount == 2)

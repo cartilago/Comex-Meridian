@@ -88,7 +88,7 @@ public class DecoratorPanel : Panel
             return;
         }
 
-		currentTool.Update();
+		currentTool.DoUpdate();
 
         // Mouse input
         if (Input.GetMouseButtonDown(0))
@@ -124,6 +124,7 @@ public class DecoratorPanel : Panel
         FingerCanvas.Instance.Clear();
       	PaintTool.ReleaseMemory();
     }
+
     #endregion
 
     #region Class implementation
