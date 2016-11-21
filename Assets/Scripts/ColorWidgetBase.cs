@@ -9,8 +9,8 @@ public class ColorWidgetBase : OptimizedGameObject
     // Use this for initialization
     private void OnEnable()
     {
-        StopAllCoroutines();
-        StartCoroutine(ShowAnimated(1));
+       // StopAllCoroutines();
+       // StartCoroutine(ShowAnimated(1));
     }
 
     // Update is called once per frame
