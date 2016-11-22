@@ -4,7 +4,6 @@ using System.Collections;
 using System.Collections.Generic;
 using Meridian.Framework.Utils;
 
-public enum EUndoMode {PNG, OneBitChannel};
 
 public class FingerCanvas : MonoSingleton<FingerCanvas> 
 {
@@ -13,11 +12,7 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
 	public Renderer canvasRenderer;
 	public SpriteRenderer brushSprite;
 	public Material[] brushMaterials;
-	public EUndoMode undoMode;
-
 	private bool newTexture;
-	private List<OneBitChannelImage>obcUndoBuffer = new List<OneBitChannelImage>();
-	private OneBitChannelImage obcCurrentUndo = null;
 	private List<byte[]>pngUndoBuffer = new List<byte[]>();
 	private byte[] pngCurrentUndo = null;
 	#endregion
@@ -197,23 +192,12 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
 	{ 
 		Texture2D snapshot = GetSnapshot();	
 
-		if (undoMode ==  EUndoMode.PNG)
-		{
-			if (pngCurrentUndo != null)
-				pngUndoBuffer.Add(pngCurrentUndo);
+		if (pngCurrentUndo != null)
+			pngUndoBuffer.Add(pngCurrentUndo);
 
-			pngCurrentUndo = snapshot.EncodeToPNG();
-			Debug.Log("Undo size: " + pngCurrentUndo.Length);
-		}
-		else
-		{
-			if (obcCurrentUndo != null)
-            	obcUndoBuffer.Add(obcCurrentUndo);
-
-			obcCurrentUndo = OneBitChannelImage.FromTexture2D(snapshot);
-			Debug.Log("Undo size: " + obcCurrentUndo.data.Length);
-		}
-
+		pngCurrentUndo = snapshot.EncodeToPNG();
+		Debug.Log("Undo size: " + pngCurrentUndo.Length);
+		
         // Release texture memory
 		DestroyImmediate(snapshot);
 		Resources.UnloadUnusedAssets(); 
@@ -228,40 +212,20 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
 		Texture2D snapshot = null;
 		Texture2D saved = null;
 
-    	if (undoMode == EUndoMode.PNG)
-    	{
-			if (pngUndoBuffer.Count > 0)
-        	{
-				saved = new Texture2D(2, 2);
-	            saved.LoadImage(pngUndoBuffer[pngUndoBuffer.Count-1]);
-				RenderTexture.active = renderTexture;
-				Graphics.Blit(saved, renderTexture);
-				pngUndoBuffer.RemoveAt(pngUndoBuffer.Count-1);
+		if (pngUndoBuffer.Count > 0)
+        {
+			saved = new Texture2D(2, 2);
+	        saved.LoadImage(pngUndoBuffer[pngUndoBuffer.Count-1]);
+			RenderTexture.active = renderTexture;
+			Graphics.Blit(saved, renderTexture);
+			pngUndoBuffer.RemoveAt(pngUndoBuffer.Count-1);
 
-				// Save undo again
-				snapshot = GetSnapshot();	
-				pngCurrentUndo = snapshot.EncodeToPNG();
+			// Save undo again
+			snapshot = GetSnapshot();	
+			pngCurrentUndo = snapshot.EncodeToPNG();
 
-				Debug.Log("Undo restored, stack size: " + pngUndoBuffer.Count + " current is null " + (pngCurrentUndo == null));
-	        }
-    	}
-    	else
-    	{ 
-			if (obcUndoBuffer.Count > 0)
-        	{
-				OneBitChannelImage oneBitChannelImage = obcUndoBuffer[obcUndoBuffer.Count-1];
-				saved = oneBitChannelImage.ToTexture2D();
-				RenderTexture.active = renderTexture;
-				Graphics.Blit(saved, renderTexture);
-				obcUndoBuffer.RemoveAt(obcUndoBuffer.Count-1);
-
-				// Save undo again
-				snapshot = GetSnapshot();	
-				obcCurrentUndo = OneBitChannelImage.FromTexture2D(snapshot);
-
-				Debug.Log("Undo restored, stack size: " + obcUndoBuffer.Count + " current is null " + (obcCurrentUndo == null));
-       		}
-        }
+			Debug.Log("Undo restored, stack size: " + pngUndoBuffer.Count + " current is null " + (pngCurrentUndo == null));
+	    }
 
         // Release memory
         DestroyImmediate(snapshot);
@@ -273,8 +237,6 @@ public class FingerCanvas : MonoSingleton<FingerCanvas>
     public void ClearUndoStack()
 	{
 		pngCurrentUndo = null;
-        obcCurrentUndo = null;
-		obcUndoBuffer.Clear();
 		// Release memory
 		Resources.UnloadUnusedAssets(); 
 		System.GC.Collect();

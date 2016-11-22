@@ -2,7 +2,7 @@
 using UnityEngine.UI;
 using System.Collections;
 
-public class CombinationWidget : ColorWidgetBase
+public class CombinationWidget : OptimizedGameObject
 {
     #region Class members
     public Graphic buttonGraphic;
